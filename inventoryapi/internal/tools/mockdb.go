@@ -1,59 +1,31 @@
 package tools
 
 import (
-    "time"
+	"inventoryapi/api"
+	"time"
 )
 
 type mockDB struct{}
 
-var mockLoginDetails = map[string]LoginDetails{
-    "ryan": {
-        AuthToken: "abc123",
-        Username: "ryan",
-    },
-    "jackson": {
-        AuthToken: "123abc",
-        Username: "jackson",
-    },
-}
-
-var mockItems = map[string]UserItemDetails{
-    "ryan": {
+var mockItems = []api.Item{
+    {
         Id: 2,
-        Name: "crach pad",
+        Name: "crash pad",
         Description: "climbing crash pad",
         Quantity: 2,
-        CheckoutDate: time.Date(2024, time.December, 17, 22, 0, 0, 0, time.UTC),
     },
-    "jackson": {
+    {
         Id: 1,
         Name: "microspikes",
         Description: "",
         Quantity: 1,
-        CheckoutDate: time.Date(2024, time.December, 17, 22, 0, 0, 0, time.UTC),
     },
 }
 
-func (d *mockDB) GetUserLoginDetails(username string) *LoginDetails {
+func (d *mockDB) GetItems() *[]api.Item {
     time.Sleep(time.Second * 1)
 
-    var clientData = LoginDetails{}
-    clientData, ok := mockLoginDetails[username]
-    if !ok {
-        return nil
-    }
-
-    return &clientData
-}
-
-func (d *mockDB) GetUserItems(username string) *UserItemDetails {
-    time.Sleep(time.Second * 1)
-
-    var clientData = UserItemDetails{}
-    clientData, ok := mockItems[username]
-    if !ok {
-        return nil
-    }
+    var clientData = mockItems
 
     return &clientData
 }

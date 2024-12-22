@@ -11,7 +11,7 @@ import (
 )
 
 func GetItems(w http.ResponseWriter, r *http.Request) {
-    var params = api.ItemParams{}
+    var params = api.UserItemParams{}
     var decoder *schema.Decoder = schema.NewDecoder()
     var err error
 
@@ -30,9 +30,9 @@ func GetItems(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    var itemDetails *tools.UserItemDetails
-    itemDetails = (*database).GetUserItems(params.Username)
-    if(itemDetails == nil) {
+    var items *[]api.Item
+    items = (*database).GetItems()
+    if(items == nil) {
         log.Error(err)
         api.InternalErrorHandler(w)
         return
@@ -40,13 +40,7 @@ func GetItems(w http.ResponseWriter, r *http.Request) {
 
     var response = api.ItemResponse{
         Code: http.StatusOK,
-        Item: api.Item{
-            Id: (itemDetails).Id,
-            Name: (*itemDetails).Name,
-            Description: (*itemDetails).Description,
-            Quantity: (*itemDetails).Quantity,
-            CheckoutDate: (*itemDetails).CheckoutDate,
-        },
+        Items: *items,
     }
 
     w.Header().Set("Content-Type", "application/json")

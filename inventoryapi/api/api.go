@@ -6,8 +6,8 @@ import(
     "time"
 )
 
-type ItemParams struct {
-    Username string
+type ItemsParams struct {
+    Name string
 }
 
 type Item struct {
@@ -15,12 +15,28 @@ type Item struct {
     Name string
     Description string
     Quantity int
-    CheckoutDate time.Time
 }
 
 type ItemResponse struct {
     Code int
-    Item Item
+    Items []Item
+}
+
+type UserItemParams struct {
+    Username string
+}
+
+type UserItem struct {
+    Id int
+    Name string
+    Description string
+    Quantity int
+    CheckoutDate time.Time
+}
+
+type UserItemResponse struct {
+    Code int
+    Item UserItem
 }
 
 type Error struct {

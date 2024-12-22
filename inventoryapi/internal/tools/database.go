@@ -2,26 +2,11 @@ package tools
 
 import (
 	log "github.com/sirupsen/logrus"
-    "time"
+    "inventoryapi/api"
 )
 
-type LoginDetails struct {
-    AuthToken string
-    Username string
-}
-
-type UserItemDetails struct {
-    Username string
-    Id int
-    Name string
-    Description string
-    Quantity int
-    CheckoutDate time.Time
-}
-
 type DatabaseInterface interface {
-    GetUserLoginDetails(username string) *LoginDetails
-    GetUserItems(username string) *UserItemDetails
+    GetItems() *[]api.Item
     SetupDatabase() error
 }
 
