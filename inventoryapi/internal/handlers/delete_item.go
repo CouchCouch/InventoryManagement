@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func GetItems(w http.ResponseWriter, r *http.Request) {
+func DeleteItems(w http.ResponseWriter, r *http.Request) {
     var params = api.ItemParams{}
     var decoder *schema.Decoder = schema.NewDecoder()
     var err error
@@ -33,22 +33,15 @@ func GetItems(w http.ResponseWriter, r *http.Request) {
 
     defer (*database).CloseDatabase()
 
-    var items *[]api.Item
-    if params.Id != 0 {
-        items = (*database).GetItem(params.Id)
-    } else {
-        items = (*database).GetItems()
-    }
-    if items == nil {
+    var success bool
+    success = (*database).DeleteItem(params.Id)
+    if success == false {
         log.Error(err)
         api.InternalErrorHandler(w)
         return
     }
 
-    var response = api.ItemResponse{
-        Code: http.StatusOK,
-        Items: *items,
-    }
+    var response = http.StatusOK
 
     //api.EnableCors(&w)
 

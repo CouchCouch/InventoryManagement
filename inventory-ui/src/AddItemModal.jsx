@@ -2,49 +2,10 @@ import { useState } from "react";
 import Modal from "./utilities/Modal";
 import { NumberInput, TextInput } from "./utilities/Inputs";
 
-function AddItemModal({ open, onClose }) {
+function AddItemModal({ open, onClose, addItem}) {
     const [name, setName] = useState("")
     const [description, setDescription] = useState("")
     const [quantity, setQuantity] = useState(0)
-
-    function addItem(name, description, quantity) {
-        console.log("Name: ", name, ", Description: ", description, ", Quantity: ", quantity)
-        if (name == "" || description == "" || quantity < 1) {
-            alert("Please enter all values")
-            return
-        }
-        let body = {
-            "Name": name,
-            "Description": description,
-            "Quantity": parseInt(quantity)
-        }
-        console.log(JSON.stringify(body))
-        fetch("http://localhost:8080/items", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(body)
-        })
-            .then(response => {
-                if(response.ok) {
-                    return response.json()
-                }
-                throw response
-            })
-            .then(id => {
-                console.log(id)
-            })
-            .catch(error => {
-                console.error("could not add item: ", error)
-            })
-            .finally(() => {
-                setName("")
-                setDescription("")
-                setQuantity(0)
-                onClose()
-            })
-    }
 
     return (
         <Modal open={open} onClose={onClose} title="Add Item">

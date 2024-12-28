@@ -15,3 +15,9 @@ body {
 .btn-create:hover {
   @apply bg-dark_green-300;
 }
+.btn-danger {
+  @apply bg-red-600 text-white;
+}
+.btn-danger:hover {
+  @apply bg-red-700;
+}

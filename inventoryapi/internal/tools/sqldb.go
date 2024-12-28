@@ -139,3 +139,18 @@ func (d *sqlDB) AddItem(item api.NewItem) *int {
 
     return &itemId
 }
+
+func (d *sqlDB) DeleteItem(id int) bool {
+    sql := "DELETE FROM items WHERE id=(($1))"
+
+    rows, err := d.db.Query(sql, id)
+
+    if err != nil {
+        log.Fatal("Failed to delete item")
+        return false
+    }
+
+    rows.Close()
+
+    return true
+}

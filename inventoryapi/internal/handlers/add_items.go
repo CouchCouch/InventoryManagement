@@ -48,7 +48,7 @@ func AddItems(w http.ResponseWriter, r *http.Request) {
         Id: *itemId,
     }
 
-    api.EnableCors(&w)
+    //api.EnableCors(&w)
 
     w.Header().Add("Content-Type", "application/json")
     err = json.NewEncoder(w).Encode(response)

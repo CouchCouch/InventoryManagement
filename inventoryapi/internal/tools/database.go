@@ -9,6 +9,7 @@ type DatabaseInterface interface {
     GetItems() *[]api.Item
     GetItem(int) *[]api.Item
     AddItem(api.NewItem) *int
+    DeleteItem(int) bool
     SetupDatabase() error
     CloseDatabase() error
 }

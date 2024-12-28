@@ -22,4 +22,5 @@ func Handler(r *chi.Mux) {
 
     r.Get("/items", GetItems)
     r.Post("/items", AddItems)
+    r.Delete("/items", DeleteItems)
 }
