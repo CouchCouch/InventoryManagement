@@ -6,8 +6,8 @@ import(
     "time"
 )
 
-type ItemsParams struct {
-    Name string
+type ItemParams struct {
+    Id int
 }
 
 type Item struct {
@@ -20,6 +20,17 @@ type Item struct {
 type ItemResponse struct {
     Code int
     Items []Item
+}
+
+type NewItem struct {
+    Name string //`schema:"name,required"`
+    Description string //`schema:"description,required"`
+    Quantity int //`schema:"quantity,default:1"`
+}
+
+type NewItemResponse struct {
+    Code int
+    Id int
 }
 
 type UserItemParams struct {
@@ -65,3 +76,8 @@ var (
         writeError(w, "An unexpected error has occured", http.StatusInternalServerError)
     }
 )
+
+func EnableCors(w *http.ResponseWriter) {
+    (*w).Header().Set("Access-Control-Allow-Origin", "*")
+    (*w).Header().Add("Access-Control-Allow-Headers", "Content-Type")
+}

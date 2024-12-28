@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-lavender
+}
+
+.btn {
+  @apply font-bold py-2 px-4 rounded-xl;
+}
+.btn-create {
+  @apply bg-dark_green text-white;
+}
+.btn-create:hover {
+  @apply bg-dark_green-300;
+}

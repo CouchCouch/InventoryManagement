@@ -7,12 +7,15 @@ import (
 
 type DatabaseInterface interface {
     GetItems() *[]api.Item
+    GetItem(int) *[]api.Item
+    AddItem(api.NewItem) *int
     SetupDatabase() error
+    CloseDatabase() error
 }
 
 func NewDatabase() (*DatabaseInterface, error) {
 
-    var database DatabaseInterface = &mockDB{}
+    var database DatabaseInterface = &sqlDB{}
 
     var err error = database.SetupDatabase()
     if err != nil {

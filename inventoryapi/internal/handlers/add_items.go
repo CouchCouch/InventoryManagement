@@ -7,16 +7,18 @@ import (
 	"inventoryapi/api"
 	"inventoryapi/internal/tools"
 
-	"github.com/gorilla/schema"
+	// "github.com/gorilla/schema"
 	log "github.com/sirupsen/logrus"
 )
 
-func GetItems(w http.ResponseWriter, r *http.Request) {
-    var params = api.ItemParams{}
-    var decoder *schema.Decoder = schema.NewDecoder()
+func AddItems(w http.ResponseWriter, r *http.Request) {
+    var params = api.NewItem{}
+    var decoder *json.Decoder = json.NewDecoder(r.Body) // *schema.Decoder = schema.NewDecoder()
     var err error
 
-    err = decoder.Decode(&params, r.URL.Query())
+    err = decoder.Decode(&params)
+
+    log.Printf("%s", params)
 
     if err != nil {
         log.Error(err)
@@ -33,21 +35,17 @@ func GetItems(w http.ResponseWriter, r *http.Request) {
 
     defer (*database).CloseDatabase()
 
-    var items *[]api.Item
-    if params.Id != 0 {
-        items = (*database).GetItem(params.Id)
-    } else {
-        items = (*database).GetItems()
-    }
-    if items == nil {
+    var itemId *int
+    itemId = (*database).AddItem(params)
+    if(itemId == nil) {
         log.Error(err)
         api.InternalErrorHandler(w)
         return
     }
 
-    var response = api.ItemResponse{
+    var response = api.NewItemResponse{
         Code: http.StatusOK,
-        Items: *items,
+        Id: *itemId,
     }
 
     api.EnableCors(&w)
