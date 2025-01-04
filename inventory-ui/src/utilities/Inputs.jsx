@@ -1,11 +1,12 @@
-function TextInput({ label, onChange }) {
+function TextInput({ label, onChange, value }) {
     return(
         <div className='relative'>
             <input
                 id='text-input'
                className='block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-500 appearance-none focus:outline-none peer'
                 type='text'
-                placeholder=' '
+                placeholder=''
+                value={value}
                 onChange={e => onChange(e.target.value)}
             />
             <label
@@ -18,7 +19,7 @@ function TextInput({ label, onChange }) {
     )
 }
 
-function NumberInput({ label, onChange }) {
+function NumberInput({ label, onChange, value }) {
     return(
         <div className='relative'>
                 <input
@@ -26,6 +27,7 @@ function NumberInput({ label, onChange }) {
                className='block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border-1 border-gray-500 appearance-none focus:outline-none peer'
                 type='number'
                 placeholder=''
+                value={value}
                 onChange={e => {onChange(e.target.value); console.log(e.target.value)}}
             />
             <label

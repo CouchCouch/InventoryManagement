@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import AddItemModal from "./AddItemModal";
-import { TrashIcon } from "@heroicons/react/24/solid";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import Modal from "./utilities/Modal";
+import { NumberInput, TextInput } from "./utilities/Inputs";
 
 
 
@@ -14,17 +15,37 @@ function ConfirmDeleteModal({ name, open, onClose, deleteFunction }) {
     )
 }
 
+function EditModal({ name, description, quantity, open, onClose, addItem}) {
+    const [newName, setName] = useState(name)
+    const [newDescription, setDescription] = useState(description)
+    const [newQuantity, setQuantity] = useState(quantity)
+
+    return (
+        <Modal open={open} onClose={onClose} title={`Edit ${name}`}>
+            <TextInput label="Name" onChange={setName} value={name} />
+            <TextInput label="Description" onChange={setDescription} value={description} />
+            <NumberInput label="Quantity" onChange={setQuantity} value={quantity}/>
+            <button className="btn btn-create mt-1 justify-end" onClick={() => {addItem(newName, newDescription, newQuantity); onClose()}}>Add</button>
+        </Modal>
+    )
+}
+
 function Item({ id, name, description, quantity, deleteFunction }) {
-    const [open, setOpen] = useState(false)
+    const [openDelete, setOpenDelete] = useState(false)
+    const [openEdit, setOpenEdit] = useState(false)
 
     return(
         <div className="mt-2 mb-2">
-            <div className="bg-ash_gray text-slate-900 text-center p-2 rounded-xl hover:bg-ash_gray-400">
+            <div className="bg-ash_gray text-slate-900 text-center p-2 rounded-xl">
                 <h1 className="text-xl font-bold mt-2 mb-4">{name}</h1>
                 <p className="text-base mb-3">{description}</p>
+                <ConfirmDeleteModal name={name} open={openDelete} onClose={() => setOpenDelete(false)} deleteFunction={deleteFunction} />
+                <EditModal name={name} description={description} quantity={quantity}  open={openEdit} onClose={() => setOpenEdit(false)}/>
                 <h2 className="text-lg font-semibold pb-2">Quantity: {quantity}</h2>
-                <button className="relative btn btn-danger" onClick={() => setOpen(true)}><TrashIcon className="size-6"/></button>
-                <ConfirmDeleteModal id={id} name={name} open={open} onClose={() => setOpen(false)} deleteFunction={deleteFunction} />
+                <div className="space-x-4">
+                    <button className="relative btn btn-danger" onClick={() => setOpenDelete(true)}><TrashIcon className="size-6"/></button>
+                    <button className="btn btn-edit" onClick={() => setOpenEdit(true)}><PencilSquareIcon className="size-6"/></button>
+                </div>
             </div>
         </div>
     )

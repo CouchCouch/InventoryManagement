@@ -21,3 +21,11 @@ body {
 .btn-danger:hover {
   @apply bg-red-700;
 }
+
+.btn-edit {
+  @apply bg-aquamarine text-black;
+}
+
+.btn-edit:hover {
+  @apply bg-aquamarine-400 text-black;
+}

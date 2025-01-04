@@ -12,7 +12,7 @@ export default function Modal({ open, onClose, title, children }) {
             <div
                 onClick={(e) => e.stopPropagation()}
                 className={`
-                    bg-lavender rounded-xl shadow p-6 transition-all
+                    bg-lavender rounded-xl shadow p-6 transition-all w-auto
                     ${open ? "scale-100 opacity-100" : "scale-125 opacity-0"}
                 `}>
                     <div className="block text-center">
