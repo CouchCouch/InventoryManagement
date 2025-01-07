@@ -1,6 +1,6 @@
 # Inventory Management
 
-# Description
+## Description
 
 A simple inventory tracking system with basic CRUD operations using PostgreSQL, Go, React with Vite and Tailwind CSS
 
