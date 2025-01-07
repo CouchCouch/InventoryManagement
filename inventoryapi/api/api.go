@@ -76,8 +76,3 @@ var (
         writeError(w, "An unexpected error has occured", http.StatusInternalServerError)
     }
 )
-
-func EnableCors(w *http.ResponseWriter) {
-    (*w).Header().Set("Access-Control-Allow-Origin", "*")
-    (*w).Header().Add("Access-Control-Allow-Headers", "Content-Type")
-}

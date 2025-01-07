@@ -15,22 +15,22 @@ function ConfirmDeleteModal({ name, open, onClose, deleteFunction }) {
     )
 }
 
-function EditModal({ name, description, quantity, open, onClose, addItem}) {
+function EditModal({ id, name, description, quantity, open, onClose, editItem}) {
     const [newName, setName] = useState(name)
     const [newDescription, setDescription] = useState(description)
     const [newQuantity, setQuantity] = useState(quantity)
 
     return (
         <Modal open={open} onClose={onClose} title={`Edit ${name}`}>
-            <TextInput label="Name" onChange={setName} value={name} />
-            <TextInput label="Description" onChange={setDescription} value={description} />
-            <NumberInput label="Quantity" onChange={setQuantity} value={quantity}/>
-            <button className="btn btn-create mt-1 justify-end" onClick={() => {addItem(newName, newDescription, newQuantity); onClose()}}>Add</button>
+            <TextInput label="Name" onChange={setName} value={newName} />
+            <TextInput label="Description" onChange={setDescription} value={newDescription} />
+            <NumberInput label="Quantity" onChange={setQuantity} value={newQuantity}/>
+            <button className="btn btn-create mt-1 justify-end" onClick={() => {editItem(id, newName, newDescription, newQuantity); onClose()}}>Edit</button>
         </Modal>
     )
 }
 
-function Item({ id, name, description, quantity, deleteFunction }) {
+function Item({ id, name, description, quantity, deleteFunction, updateFunction }) {
     const [openDelete, setOpenDelete] = useState(false)
     const [openEdit, setOpenEdit] = useState(false)
 
@@ -40,7 +40,7 @@ function Item({ id, name, description, quantity, deleteFunction }) {
                 <h1 className="text-xl font-bold mt-2 mb-4">{name}</h1>
                 <p className="text-base mb-3">{description}</p>
                 <ConfirmDeleteModal name={name} open={openDelete} onClose={() => setOpenDelete(false)} deleteFunction={deleteFunction} />
-                <EditModal name={name} description={description} quantity={quantity}  open={openEdit} onClose={() => setOpenEdit(false)}/>
+                <EditModal id={id} name={name} description={description} quantity={quantity} editItem={updateFunction} open={openEdit} onClose={() => setOpenEdit(false)}/>
                 <h2 className="text-lg font-semibold pb-2">Quantity: {quantity}</h2>
                 <div className="space-x-4">
                     <button className="relative btn btn-danger" onClick={() => setOpenDelete(true)}><TrashIcon className="size-6"/></button>
@@ -96,7 +96,7 @@ export default function ItemDisplay() {
     }
 
     function addItem(name, description, quantity) {
-        console.log("Name: ", name, ", Description: ", description, ", Quantity: ", quantity)
+        console.log("CREATING: Name: ", name, ", Description: ", description, ", Quantity: ", quantity)
         if (name == "" || description == "" || quantity < 1) {
             alert("Please enter all values")
             return
@@ -131,6 +131,40 @@ export default function ItemDisplay() {
             })
     }
 
+    function updateItem(id, name, description, quantity) {
+        console.log("UPDATING: Id: ", id, "Name: ", name, ", Description: ", description, ", Quantity: ", quantity)
+        if (name == "" || description == "" || quantity < 1) {
+            alert("Please enter all values")
+            return
+        }
+        let body = {
+            "Id": id,
+            "Name": name,
+            "Description": description,
+            "Quantity": parseInt(quantity)
+        }
+        console.log(JSON.stringify(body))
+        fetch("http://localhost:8080/items", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body)
+        })
+            .then(response => {
+                if(response.ok) {
+                    console.log("Updated: ", id)
+                }
+                else {
+                    console.log(response)
+                }
+            })
+            .then(() => {
+                fetchData()
+            })
+    }
+
+
     useEffect(() => {
         fetchData()
     }, [""]);
@@ -146,11 +180,14 @@ export default function ItemDisplay() {
         </div>
     )
 
-    if (items.length < 1) {
+    if (!items) {
         return(
-        <div className="text-4xl font-bold bg-red-700 align-middle text-center pt-10 pb-10">
-            <h1>No Data</h1>
-        </div>
+            <>
+                <div className="text-4xl font-bold bg-red-700 align-middle text-center pt-10 pb-10">
+                    <h1>No Data</h1>
+                </div>
+                <AddItemModal open={open} onClose={() => setOpen(false)} addItem={addItem}/>
+            </>
         )
     }
 
@@ -160,7 +197,7 @@ export default function ItemDisplay() {
                 {
                     items.map(item => {
                         return(
-                            <Item className="w-full" key={item.Id} id={item.Id} name={item.Name} description={item.Description} quantity={item.Quantity} deleteFunction={() => deleteItem(item.Id)} />
+                            <Item className="w-full" key={item.Id} id={item.Id} name={item.Name} description={item.Description} quantity={item.Quantity} deleteFunction={() => deleteItem(item.Id)} updateFunction={updateItem}/>
                         )}
                     )
                 }

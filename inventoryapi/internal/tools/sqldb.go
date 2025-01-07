@@ -140,6 +140,20 @@ func (d *sqlDB) AddItem(item api.NewItem) *int {
     return &itemId
 }
 
+func (d *sqlDB) UpdateItem(item api.Item) bool {
+    sql := "UPDATE items SET name=($1), description=($2), quantity=($3) WHERE id=($4)"
+
+    rows, err := d.db.Query(sql, item.Name, item.Description, item.Quantity, item.Id)
+
+    if err != nil {
+        log.Fatalf("Failed to add item ERROR: %s", err)
+    }
+
+    rows.Close()
+
+    return true
+}
+
 func (d *sqlDB) DeleteItem(id int) bool {
     sql := "DELETE FROM items WHERE id=(($1))"
 

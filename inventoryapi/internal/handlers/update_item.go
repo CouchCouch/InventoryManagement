@@ -11,8 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func AddItems(w http.ResponseWriter, r *http.Request) {
-    var params = api.NewItem{}
+func UpdateItem(w http.ResponseWriter, r *http.Request) {
+    var params = api.Item{}
     var decoder *json.Decoder = json.NewDecoder(r.Body) // *schema.Decoder = schema.NewDecoder()
     var err error
 
@@ -35,18 +35,15 @@ func AddItems(w http.ResponseWriter, r *http.Request) {
 
     defer (*database).CloseDatabase()
 
-    var itemId *int
-    itemId = (*database).AddItem(params)
-    if(itemId == nil) {
+    var success bool
+    success = (*database).UpdateItem(params)
+    if success == false {
         log.Error(err)
         api.InternalErrorHandler(w)
         return
     }
 
-    var response = api.NewItemResponse{
-        Code: http.StatusOK,
-        Id: *itemId,
-    }
+    var response = http.StatusOK
 
     w.Header().Add("Content-Type", "application/json")
     err = json.NewEncoder(w).Encode(response)
