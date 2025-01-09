@@ -1,9 +1,9 @@
 package api
 
-import(
-    "encoding/json"
-    "net/http"
-    "time"
+import (
+	"encoding/json"
+	"net/http"
+	"time"
 )
 
 type ItemParams struct {
@@ -33,21 +33,22 @@ type NewItemResponse struct {
     Id int
 }
 
-type UserItemParams struct {
-    Username string
-}
-
-type UserItem struct {
+type CheckoutItem struct {
     Id int
     Name string
-    Description string
-    Quantity int
-    CheckoutDate time.Time
+    Email string
 }
 
-type UserItemResponse struct {
+type CheckoutItemReceipt struct {
+    ItemId int
+    Name string
+    Email string
+    Date time.Time
+}
+
+type CheckoutItemResponse struct {
     Code int
-    Item UserItem
+    Receipt CheckoutItemReceipt
 }
 
 type Error struct {

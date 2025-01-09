@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"inventoryapi/api"
 	"log"
+	"time"
 
 	"os"
 
@@ -167,4 +168,27 @@ func (d *sqlDB) DeleteItem(id int) bool {
     rows.Close()
 
     return true
+}
+
+func (d *sqlDB) CheckoutItem(item api.CheckoutItem) *api.CheckoutItemReceipt {
+    sql := "INSERT INTO checkouts (item_id, name, email, checkout_date) VALUES (($1), ($2), ($3), ($4))"
+
+    checkoutDate := time.Now()
+
+    rows, err := d.db.Query(sql, item.Id, item.Name, item.Email, checkoutDate)
+
+    if err != nil {
+        log.Fatal("Checkout Failed")
+    }
+
+    rows.Close()
+
+    resp := api.CheckoutItemReceipt{
+        ItemId: item.Id,
+        Name: item.Name,
+        Email: item.Email,
+        Date: checkoutDate,
+    }
+
+    return &resp
 }

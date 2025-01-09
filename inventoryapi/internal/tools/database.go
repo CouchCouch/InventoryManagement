@@ -11,6 +11,7 @@ type DatabaseInterface interface {
     AddItem(api.NewItem) *int
     UpdateItem(api.Item) bool
     DeleteItem(int) bool
+    CheckoutItem(api.CheckoutItem) *api.CheckoutItemReceipt
     SetupDatabase() error
     CloseDatabase() error
 }
