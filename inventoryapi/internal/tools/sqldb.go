@@ -192,3 +192,17 @@ func (d *sqlDB) CheckoutItem(item api.CheckoutItem) *api.CheckoutItemReceipt {
 
     return &resp
 }
+
+func (d *sqlDB) ReturnItem(id int) bool {
+    sql := "UPDATE CHECKOUTS SET returned = TRUE WHERE item_id=($1)"
+
+    rows, err := d.db.Query(sql, id)
+
+    if err != nil {
+        log.Fatal("Checkout Failed")
+    }
+
+    rows.Close()
+
+    return true;
+}

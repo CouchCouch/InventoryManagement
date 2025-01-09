@@ -25,4 +25,5 @@ func Handler(r *chi.Mux) {
     r.Delete("/items", DeleteItems)
     r.Put("/items", UpdateItem)
     r.Post("/checkout", CheckoutItem)
+    r.Put("/checkout", ReturnItem)
 }
