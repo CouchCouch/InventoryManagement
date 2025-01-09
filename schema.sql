@@ -13,6 +13,5 @@ CREATE TABLE checkouts (
     checkout_date DATE NOT NULL,
     returned BOOLEAN DEFAULT FALSE,
     emailed BOOLEAN DEFAULT FALSE,
-    email_count INTEGER DEFAULT 0,
     FOREIGN KEY(item_id) REFERENCES items(id)
 );
