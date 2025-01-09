@@ -12,7 +12,7 @@ import (
 )
 
 func CheckoutItem(w http.ResponseWriter, r *http.Request) {
-    var params = api.CheckoutItem{}
+    var params = api.CheckoutParams{}
     var decoder *json.Decoder = json.NewDecoder(r.Body) // *schema.Decoder = schema.NewDecoder()
     var err error
 

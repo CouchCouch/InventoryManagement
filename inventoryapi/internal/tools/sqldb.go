@@ -170,7 +170,7 @@ func (d *sqlDB) DeleteItem(id int) bool {
     return true
 }
 
-func (d *sqlDB) CheckoutItem(item api.CheckoutItem) *api.CheckoutItemReceipt {
+func (d *sqlDB) CheckoutItem(item api.CheckoutParams) *api.CheckoutItemReceipt {
     sql := "INSERT INTO checkouts (item_id, name, email, checkout_date) VALUES (($1), ($2), ($3), ($4))"
 
     checkoutDate := time.Now()
@@ -199,10 +199,46 @@ func (d *sqlDB) ReturnItem(id int) bool {
     rows, err := d.db.Query(sql, id)
 
     if err != nil {
-        log.Fatal("Checkout Failed")
+        log.Fatal("Return Failed")
     }
 
     rows.Close()
 
     return true;
+}
+
+func (d *sqlDB) GetCheckouts() *[]api.CheckoutItem {
+    sql := "SELECT item_id, name, email, checkout_date, returned FROM checkouts"
+
+    rows,  err := d.db.Query(sql)
+
+    if err != nil {
+        log.Fatal("Get Checkouts Failed", err)
+    }
+
+    defer rows.Close()
+
+    var checkouts []api.CheckoutItem
+
+    for rows.Next() {
+        var itemId int
+        var name string
+        var email string
+        var date time.Time
+        var returned bool
+
+        if err := rows.Scan(&itemId, &name, &email, &date, &returned); err != nil {
+            log.Fatal(err)
+        }
+
+        checkouts = append(checkouts, api.CheckoutItem{
+            ItemId: itemId,
+            Name: name,
+            Email: email,
+            Date: date,
+            Returned: returned,
+        })
+    }
+
+    return &checkouts
 }

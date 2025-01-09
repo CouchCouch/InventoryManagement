@@ -9,6 +9,7 @@ import (
 func Handler(r *chi.Mux) {
     r.Use(chimiddle.StripSlashes)
     r.Use(chimiddle.Logger)
+    r.Use(chimiddle.RequestID)
     r.Use(cors.Handler(cors.Options{
         AllowedOrigins:   []string{"*"}, // Use this to allow specific origin hosts
         // AllowedOrigins:   []string{"https://*", "http://*"},
@@ -26,4 +27,5 @@ func Handler(r *chi.Mux) {
     r.Put("/items", UpdateItem)
     r.Post("/checkout", CheckoutItem)
     r.Put("/checkout", ReturnItem)
+    r.Get("/checkout", GetCheckouts)
 }

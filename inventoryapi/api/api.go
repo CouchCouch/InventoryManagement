@@ -33,7 +33,7 @@ type NewItemResponse struct {
     Id int
 }
 
-type CheckoutItem struct {
+type CheckoutParams struct {
     Id int
     Name string
     Email string
@@ -46,9 +46,22 @@ type CheckoutItemReceipt struct {
     Date time.Time
 }
 
+type CheckoutItem struct {
+    ItemId int
+    Name string
+    Email string
+    Date time.Time
+    Returned bool
+}
+
 type CheckoutItemResponse struct {
     Code int
     Receipt CheckoutItemReceipt
+}
+
+type CheckoutResponse struct {
+    Code int
+    Checkouts []CheckoutItem
 }
 
 type Error struct {
