@@ -1,4 +1,4 @@
-import ItemDisplay from './Item'
+import ItemDisplay from './ItemsDisplay'
 import Headers from './Headers'
 import DragonBeavers from './DragonBeavers'
 

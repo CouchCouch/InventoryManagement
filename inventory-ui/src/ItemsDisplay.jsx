@@ -3,16 +3,26 @@ import AddItemModal from "./AddItemModal";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
 import Modal from "./utilities/Modal";
 import { NumberInput, TextInput } from "./utilities/Inputs";
+import PropTypes from 'prop-types';
 
 
 
 function ConfirmDeleteModal({ name, open, onClose, deleteFunction }) {
     return(
         <Modal title={`Delete ${name}`} open={open} onClose={onClose}>
-            <p>Are you sure you want to Delete</p>
-            <button className="btn btn-danger mt-1 justify-end" onClick={deleteFunction}>Confirm</button>
+            <>
+                <p>Are you sure you want to Delete</p>
+                <button className="btn btn-danger mt-1 justify-end" onClick={deleteFunction}>Confirm</button>
+            </>
         </Modal>
     )
+}
+
+ConfirmDeleteModal.propTypes = {
+    name: PropTypes.string,
+    open: PropTypes.bool,
+    onClose: PropTypes.func,
+    deleteFunction: PropTypes.func
 }
 
 function EditModal({ id, name, description, quantity, open, onClose, editItem}) {
@@ -22,12 +32,24 @@ function EditModal({ id, name, description, quantity, open, onClose, editItem}) 
 
     return (
         <Modal open={open} onClose={onClose} title={`Edit ${name}`}>
-            <TextInput label="Name" onChange={setName} value={newName} />
-            <TextInput label="Description" onChange={setDescription} value={newDescription} />
-            <NumberInput label="Quantity" onChange={setQuantity} value={newQuantity}/>
-            <button className="btn btn-create mt-1 justify-end" onClick={() => {editItem(id, newName, newDescription, newQuantity); onClose()}}>Edit</button>
+            <>
+                <TextInput label="Name" onChange={setName} value={newName} />
+                <TextInput label="Description" onChange={setDescription} value={newDescription} />
+                <NumberInput label="Quantity" onChange={setQuantity} value={newQuantity}/>
+                <button className="btn btn-create mt-1 justify-end" onClick={() => {editItem(id, newName, newDescription, newQuantity); onClose()}}>Edit</button>
+            </>
         </Modal>
     )
+}
+
+EditModal.propTypes = {
+    id: PropTypes.number,
+    name: PropTypes.string,
+    description: PropTypes.string,
+    quantity: PropTypes.number,
+    open: PropTypes.bool,
+    onClose: PropTypes.func,
+    editItem: PropTypes.func
 }
 
 function Item({ id, name, description, quantity, deleteFunction, updateFunction }) {
@@ -43,12 +65,21 @@ function Item({ id, name, description, quantity, deleteFunction, updateFunction 
                 <EditModal id={id} name={name} description={description} quantity={quantity} editItem={updateFunction} open={openEdit} onClose={() => setOpenEdit(false)}/>
                 <h2 className="text-lg font-semibold pb-2">Quantity: {quantity}</h2>
                 <div className="space-x-4">
-                    <button className="relative btn btn-danger" onClick={() => setOpenDelete(true)}><TrashIcon className="size-6"/></button>
+                    <button className="btn btn-danger" onClick={() => setOpenDelete(true)}><TrashIcon className="size-6"/></button>
                     <button className="btn btn-edit" onClick={() => setOpenEdit(true)}><PencilSquareIcon className="size-6"/></button>
                 </div>
             </div>
         </div>
     )
+}
+
+Item.propTypes = {
+    id: PropTypes.number,
+    name: PropTypes.string,
+    description: PropTypes.string,
+    quantity: PropTypes.number,
+    deleteFunction: PropTypes.func,
+    updateFunction: PropTypes.func
 }
 
 export default function ItemDisplay() {
@@ -164,10 +195,9 @@ export default function ItemDisplay() {
             })
     }
 
-
     useEffect(() => {
         fetchData()
-    }, [""]);
+    }, []);
 
     if (loading) return(
         <div className="text-center">
@@ -193,7 +223,7 @@ export default function ItemDisplay() {
 
     return(
         <div className="m-2">
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {
                     items.map(item => {
                         return(
