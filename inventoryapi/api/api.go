@@ -47,7 +47,8 @@ type CheckoutItemReceipt struct {
 }
 
 type CheckoutItem struct {
-    ItemId int
+    Id int
+    ItemName string
     Name string
     Email string
     Date time.Time

@@ -208,7 +208,7 @@ func (d *sqlDB) ReturnItem(id int) bool {
 }
 
 func (d *sqlDB) GetCheckouts() *[]api.CheckoutItem {
-    sql := "SELECT item_id, name, email, checkout_date, returned FROM checkouts"
+    sql := "SELECT checkouts.id, items.name, checkouts.name, email, checkout_date, returned FROM checkouts INNER JOIN items ON items.id = checkouts.item_id"
 
     rows,  err := d.db.Query(sql)
 
@@ -221,18 +221,20 @@ func (d *sqlDB) GetCheckouts() *[]api.CheckoutItem {
     var checkouts []api.CheckoutItem
 
     for rows.Next() {
-        var itemId int
+        var id int
+        var itemName string
         var name string
         var email string
         var date time.Time
         var returned bool
 
-        if err := rows.Scan(&itemId, &name, &email, &date, &returned); err != nil {
+        if err := rows.Scan(&id, &itemName, &name, &email, &date, &returned); err != nil {
             log.Fatal(err)
         }
 
         checkouts = append(checkouts, api.CheckoutItem{
-            ItemId: itemId,
+            Id: id,
+            ItemName: itemName,
             Name: name,
             Email: email,
             Date: date,
