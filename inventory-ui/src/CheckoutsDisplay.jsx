@@ -8,7 +8,7 @@ function ReturnModal ({ name, returnFunc, open, onClose }) {
         <Modal title={`Return ${name}`} open={open} onClose={onClose} >
             <>
                 <p>Are you sure you want to mark as returned?</p>
-                <button className="btn btn-danger mt-1 justi" onClick={returnFunc}>Confirm</button>
+                <button className="btn btn-danger mt-1 justi" onClick={() => {returnFunc(); onClose()}}>Confirm</button>
             </>
         </Modal>
     )
@@ -101,6 +101,15 @@ function CheckoutDisplay() {
             <h1>Error! please try reloading</h1>
         </div>
     )
+
+    if (!checkouts) {
+        return(
+            <div className="text-4xl font-bold align-middle text-center pt-10 pb-10">
+                <h1>No Checkouts</h1>
+            </div>
+
+        )
+    }
 
     return(
         <div className="m-2">

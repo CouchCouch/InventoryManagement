@@ -212,12 +212,13 @@ export default function ItemDisplay() {
 
     if (!items) {
         return(
-            <>
-                <div className="text-4xl font-bold bg-red-700 align-middle text-center pt-10 pb-10">
-                    <h1>No Data</h1>
+            <div className='m-2'>
+                <div className="text-4xl font-bold align-middle text-center pt-10 pb-10">
+                    <h1>No Items</h1>
                 </div>
+                <button className='btn btn-create' onClick={() => setOpen(true)}>Add Item</button>
                 <AddItemModal open={open} onClose={() => setOpen(false)} addItem={addItem}/>
-            </>
+            </div>
         )
     }
 
