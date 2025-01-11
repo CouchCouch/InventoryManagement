@@ -1,10 +1,31 @@
 import { EnvelopeIcon } from '@heroicons/react/24/solid';
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
+import Modal from './utilities/Modal'
 
-function Checkout({ item, name, email, date, returned }) {
+function ReturnModal ({ name, returnFunc, open, onClose }) {
     return (
-    <div className="mt-2 mb-2">
+        <Modal title={`Return ${name}`} open={open} onClose={onClose} >
+            <>
+                <p>Are you sure you want to mark as returned?</p>
+                <button className="btn btn-danger mt-1 justi" onClick={returnFunc}>Confirm</button>
+            </>
+        </Modal>
+    )
+
+}
+
+ReturnModal.propTypes = {
+    name: PropTypes.string,
+    returnFunc: PropTypes.func,
+    open: PropTypes.bool,
+    onClose: PropTypes.func,
+}
+
+function Checkout({ item, name, email, date, returned, returnFunc}) {
+    const [open, setOpen] = useState(false)
+    return (
+        <div className="mt-2 mb-2">
             <div className="bg-ash_gray text-slate-900 text-center p-2 rounded-xl">
                 <h1 className="text-xl font-bold mt-2 mb-2">{item}</h1>
                 <p className="text-base mb-2 text-center">{name}</p>
@@ -15,7 +36,9 @@ function Checkout({ item, name, email, date, returned }) {
                     </a>
                 </p>
                 <p className="text-pase mb-2">Checkout Date: {date}</p>
-                <p className="text-base mb-2">{returned ? "Not Returned" : "Returned"}</p>
+                <p className="text-base mb-2">{returned ? "Returned" : "Not Returned"}</p>
+                <button className="btn btn-danger" onClick={() => setOpen(true)}>Mark Returned</button>
+                <ReturnModal name={item} returnFunc={returnFunc} open={open} onClose={() => setOpen(false)} />
             </div>
         </div>
     )
@@ -26,13 +49,25 @@ Checkout.propTypes = {
     name: PropTypes.string,
     email: PropTypes.string,
     date: PropTypes.string,
-    returned: PropTypes.bool
+    returned: PropTypes.bool,
+    returnFunc: PropTypes.func
 }
 
 function CheckoutDisplay() {
     const [checkouts, setCheckouts] = useState(Array([]))
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+
+    const returnItem = (id) => {
+        fetch('http://localhost:8080/checkout?id=' + id, {method: "PUT"})
+        .then(response => {
+                if(response.ok) {
+                    console.log("success")
+                    return
+                }
+                alert("Could not mark item as returned")
+            })
+    }
 
     useEffect(() => {
         fetch('http://localhost:8080/checkout')
@@ -74,7 +109,15 @@ function CheckoutDisplay() {
                     checkouts.map(checkout => {
                         let date = new Date(checkout.Date)
                         return(
-                            <Checkout key={checkout.Id} item={checkout.ItemName} name={checkout.Name} email={checkout.Email} date={date.toLocaleDateString()} returned={checkout.Returned}/>
+                            <Checkout
+                                key={checkout.Id}
+                                item={checkout.ItemName}
+                                name={checkout.Name}
+                                email={checkout.Email}
+                                date={date.toLocaleDateString()}
+                                returned={checkout.Returned}
+                                returnFunc={()=>returnItem(checkout.Id)}
+                            />
                         )
                     })
                 }
