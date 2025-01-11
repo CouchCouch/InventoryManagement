@@ -1,7 +1,7 @@
 <div align="center">
-  
+
 # Inventory Management
-  
+
 </div>
 
 ## Description
@@ -18,8 +18,8 @@ A simple inventory tracking system with basic CRUD operations using PostgreSQL, 
 
 ### Checkout Functionality
 - [ ] Checkout
-- [ ] Return
-- [ ] View all checked out items
+- [x] Return
+- [x] View all checked out items (caveat, does not filter by returned items)
 
 ### Other
 - [ ] Search inventory
