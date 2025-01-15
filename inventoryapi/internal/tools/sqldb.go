@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"inventoryapi/api"
 	"log"
+	"time"
 
 	"os"
 
@@ -167,4 +168,79 @@ func (d *sqlDB) DeleteItem(id int) bool {
     rows.Close()
 
     return true
+}
+
+func (d *sqlDB) CheckoutItem(item api.CheckoutParams) *api.CheckoutItemReceipt {
+    sql := "INSERT INTO checkouts (item_id, name, email, checkout_date) VALUES (($1), ($2), ($3), ($4))"
+
+    checkoutDate := time.Now()
+
+    rows, err := d.db.Query(sql, item.Id, item.Name, item.Email, checkoutDate)
+
+    if err != nil {
+        log.Fatal("Checkout Failed")
+    }
+
+    rows.Close()
+
+    resp := api.CheckoutItemReceipt{
+        ItemId: item.Id,
+        Name: item.Name,
+        Email: item.Email,
+        Date: checkoutDate,
+    }
+
+    return &resp
+}
+
+func (d *sqlDB) ReturnItem(id int) bool {
+    sql := "UPDATE CHECKOUTS SET returned = TRUE WHERE id=($1)"
+
+    rows, err := d.db.Query(sql, id)
+
+    if err != nil {
+        log.Fatal("Return Failed")
+    }
+
+    rows.Close()
+
+    return true;
+}
+
+func (d *sqlDB) GetCheckouts() *[]api.CheckoutItem {
+    sql := "SELECT checkouts.id, items.name, checkouts.name, email, checkout_date, returned FROM checkouts INNER JOIN items ON items.id = checkouts.item_id"
+
+    rows,  err := d.db.Query(sql)
+
+    if err != nil {
+        log.Fatal("Get Checkouts Failed", err)
+    }
+
+    defer rows.Close()
+
+    var checkouts []api.CheckoutItem
+
+    for rows.Next() {
+        var id int
+        var itemName string
+        var name string
+        var email string
+        var date time.Time
+        var returned bool
+
+        if err := rows.Scan(&id, &itemName, &name, &email, &date, &returned); err != nil {
+            log.Fatal(err)
+        }
+
+        checkouts = append(checkouts, api.CheckoutItem{
+            Id: id,
+            ItemName: itemName,
+            Name: name,
+            Email: email,
+            Date: date,
+            Returned: returned,
+        })
+    }
+
+    return &checkouts
 }
