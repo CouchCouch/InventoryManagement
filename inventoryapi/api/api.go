@@ -7,68 +7,67 @@ import (
 )
 
 type ItemParams struct {
-    Id int
+    Id  int `schema:"id"`
 }
 
 type Item struct {
-    Id int
-    Name string
-    Description string
-    Quantity int
+    Id          int     `json:"id"`
+    Name        string  `json:"name"`
+    Description string  `json:"description"`
+    Quantity    int     `json:"quantity"`
 }
 
 type ItemResponse struct {
-    Code int
-    Items []Item
+    Code    int     `json:"code"`
+    Items   []Item  `json:"items"`
 }
 
 type NewItem struct {
-    Name string //`schema:"name,required"`
-    Description string //`schema:"description,required"`
-    Quantity int //`schema:"quantity,default:1"`
+    Name        string  `json:"name"`//`schema:"name,required"`
+    Description string  `json:"description"`//`schema:"description,required"`
+    Quantity    int     `json:"quantity"`//`schema:"quantity,default:1"`
 }
 
 type NewItemResponse struct {
-    Code int
-    Id int
+    Code    int `json:"code"`
+    Id      int `json:"id"`
 }
 
 type CheckoutParams struct {
-    Id int
-    Name string
-    Email string
+    Id      int     `json:"id"`
+    Name    string  `json:"name"`
+    Email   string  `json:"email"`
 }
 
 type CheckoutItemReceipt struct {
-    ItemId int
-    Name string
-    Email string
-    Date time.Time
+    ItemId  int         `json:"itemId"`
+    Name    string      `json:"name"`
+    Email   string      `json:"email"`
+    Date    time.Time   `json:"date"`
 }
 
 type CheckoutItem struct {
-    Id int
-    ItemName string
-    Name string
-    Email string
-    Date time.Time
-    Returned bool
+    Id          int         `json:"id"`
+    ItemName    string      `json:"itemName"`
+    Name        string      `json:"name"`
+    Email       string      `json:"email"`
+    Date        time.Time   `json:"date"`
+    Returned    bool        `json:"returned"`
 }
 
 type CheckoutItemResponse struct {
-    Code int
-    Receipt CheckoutItemReceipt
+    Code    int                 `json:"code"`
+    Receipt CheckoutItemReceipt `json:"receipt"`
 }
 
 type CheckoutResponse struct {
-    Code int
-    Checkouts []CheckoutItem
+    Code        int             `json:"code"`
+    Checkouts   []CheckoutItem  `json:"checkouts"`
 }
 
 type Error struct {
-    Code int
-
-    Message string
+    Code    int     `json:"code"`
+    Message string  `json:"message"`
 }
 
 func writeError(w http.ResponseWriter, message string, code int) {
