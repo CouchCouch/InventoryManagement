@@ -114,7 +114,7 @@ export default function ItemDisplay() {
             })
             .then(data => {
                 console.log(data)
-                setItems(data['Items'])
+                setItems(data['items'])
                 console.log(items)
             })
             .catch(error => {
@@ -133,9 +133,9 @@ export default function ItemDisplay() {
             return
         }
         let body = {
-            "Name": name,
-            "Description": description,
-            "Quantity": parseInt(quantity)
+            "name": name,
+            "description": description,
+            "quantity": parseInt(quantity)
         }
         console.log(JSON.stringify(body))
         fetch("http://localhost:8080/items", {
@@ -169,10 +169,10 @@ export default function ItemDisplay() {
             return
         }
         let body = {
-            "Id": id,
-            "Name": name,
-            "Description": description,
-            "Quantity": parseInt(quantity)
+            "id": id,
+            "name": name,
+            "description": description,
+            "quantity": parseInt(quantity)
         }
         console.log(JSON.stringify(body))
         fetch("http://localhost:8080/items", {
@@ -228,7 +228,15 @@ export default function ItemDisplay() {
                 {
                     items.map(item => {
                         return(
-                            <Item className="w-full" key={item.Id} id={item.Id} name={item.Name} description={item.Description} quantity={item.Quantity} deleteFunction={() => deleteItem(item.Id)} updateFunction={updateItem}/>
+                            <Item
+                                className="w-full"
+                                key={item.id}
+                                id={item.id}
+                                name={item.name}
+                                description={item.description}
+                                quantity={item.quantity}
+                                deleteFunction={() => deleteItem(item.id)}
+                                updateFunction={updateItem}/>
                         )}
                     )
                 }

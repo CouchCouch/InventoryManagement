@@ -79,7 +79,7 @@ function CheckoutDisplay() {
             })
         .then(data => {
                 console.log(data)
-                setCheckouts(data['Checkouts'])
+                setCheckouts(data['checkouts'])
                 console.log(checkouts)
             })
         .catch(error => {
@@ -116,16 +116,16 @@ function CheckoutDisplay() {
             <div className="grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {
                     checkouts.map(checkout => {
-                        let date = new Date(checkout.Date)
+                        let date = new Date(checkout.date)
                         return(
                             <Checkout
-                                key={checkout.Id}
-                                item={checkout.ItemName}
-                                name={checkout.Name}
-                                email={checkout.Email}
+                                key={checkout.id}
+                                item={checkout.itemName}
+                                name={checkout.name}
+                                email={checkout.email}
                                 date={date.toLocaleDateString()}
-                                returned={checkout.Returned}
-                                returnFunc={()=>returnItem(checkout.Id)}
+                                returned={checkout.returned}
+                                returnFunc={()=>returnItem(checkout.id)}
                             />
                         )
                     })
