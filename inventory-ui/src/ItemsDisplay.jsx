@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import AddItemModal from "./AddItemModal";
-import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid";
+import { PencilSquareIcon, ShoppingCartIcon, TrashIcon } from "@heroicons/react/24/solid";
 import Modal from "./utilities/Modal";
 import { NumberInput, TextInput } from "./utilities/Inputs";
 import PropTypes from 'prop-types';
-
-
 
 function ConfirmDeleteModal({ name, open, onClose, deleteFunction }) {
     return(
@@ -49,12 +47,35 @@ EditModal.propTypes = {
     quantity: PropTypes.number,
     open: PropTypes.bool,
     onClose: PropTypes.func,
-    editItem: PropTypes.func
+    editItem: PropTypes.func,
 }
 
-function Item({ id, name, description, quantity, deleteFunction, updateFunction }) {
+function CheckoutModal({ itemName, id, open, onClose, checkout }) {
+    const [name, setName] = useState("")
+    const [email, setEmail] = useState("")
+    return(
+        <Modal title={`Delete ${itemName}`} open={open} onClose={onClose}>
+            <>
+                <TextInput label="Name" onChange={setName} value={name} />
+                <TextInput label="Email" onChange={setEmail} value={email} />
+                <button className="btn btn-danger mt-1 justify-end" onClick={() => checkout(name, email, id)}>Checkout</button>
+            </>
+        </Modal>
+    )
+}
+
+CheckoutModal.propTypes = {
+    itemName: PropTypes.string,
+    id: PropTypes.number,
+    open: PropTypes.bool,
+    onClose: PropTypes.func,
+    checkout: PropTypes.func
+}
+
+function Item({ id, name, description, quantity, deleteFunction, updateFunction, checkout}) {
     const [openDelete, setOpenDelete] = useState(false)
     const [openEdit, setOpenEdit] = useState(false)
+    const [openCheckout, setOpenCheckout] = useState(false)
 
     return(
         <div className="mt-2 mb-2">
@@ -63,10 +84,12 @@ function Item({ id, name, description, quantity, deleteFunction, updateFunction 
                 <p className="text-base mb-3">{description}</p>
                 <ConfirmDeleteModal name={name} open={openDelete} onClose={() => setOpenDelete(false)} deleteFunction={deleteFunction} />
                 <EditModal id={id} name={name} description={description} quantity={quantity} editItem={updateFunction} open={openEdit} onClose={() => setOpenEdit(false)}/>
+                <CheckoutModal itemName={name} id={id} open={openCheckout} onClose={()=>{setOpenCheckout(false)}} checkout={checkout}/>
                 <h2 className="text-lg font-semibold pb-2">Quantity: {quantity}</h2>
                 <div className="space-x-4">
                     <button className="btn btn-danger" onClick={() => setOpenDelete(true)}><TrashIcon className="size-6"/></button>
                     <button className="btn btn-edit" onClick={() => setOpenEdit(true)}><PencilSquareIcon className="size-6"/></button>
+                    <button className="btn btn-create" onClick={() => setOpenCheckout(true)}><ShoppingCartIcon className="size-6" /></button>
                 </div>
             </div>
         </div>
@@ -79,7 +102,8 @@ Item.propTypes = {
     description: PropTypes.string,
     quantity: PropTypes.number,
     deleteFunction: PropTypes.func,
-    updateFunction: PropTypes.func
+    updateFunction: PropTypes.func,
+    checkout: PropTypes.func
 }
 
 export default function ItemDisplay() {
@@ -195,6 +219,33 @@ export default function ItemDisplay() {
             })
     }
 
+    function checkoutItem(name, email, itemId) {
+        if (name == "" || email == "" || itemId < 1) {
+            alert("Please enter all values")
+            return
+        }
+        let body = {
+            "name" : name,
+            "email": email,
+            "id": itemId,
+        }
+        fetch("http://localhost:8080/checkout", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body)
+        })
+            .then(response => {
+                if(response.ok) {
+                    console.log("Checkout Success")
+                }
+                else {
+                    console.log(response)
+                }
+            })
+    }
+
     useEffect(() => {
         fetchData()
     }, []);
@@ -236,7 +287,9 @@ export default function ItemDisplay() {
                                 description={item.description}
                                 quantity={item.quantity}
                                 deleteFunction={() => deleteItem(item.id)}
-                                updateFunction={updateItem}/>
+                                updateFunction={updateItem}
+                                checkout={checkoutItem}
+                            />
                         )}
                     )
                 }
