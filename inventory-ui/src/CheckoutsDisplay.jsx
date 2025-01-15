@@ -63,13 +63,14 @@ function CheckoutDisplay() {
         .then(response => {
                 if(response.ok) {
                     console.log("success")
+                    fetchData()
                     return
                 }
                 alert("Could not mark item as returned")
             })
     }
 
-    useEffect(() => {
+    function fetchData() {
         fetch('http://localhost:8080/checkout')
         .then(response => {
                 if(response.ok) {
@@ -89,7 +90,11 @@ function CheckoutDisplay() {
         .finally(() => {
                 setLoading(false)
             })
-    },[])
+    }
+
+    useEffect(() => {
+        fetchData()
+    }, [])
 
     if (loading) return(
         <div className="text-center">
