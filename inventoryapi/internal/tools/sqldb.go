@@ -194,7 +194,7 @@ func (d *sqlDB) CheckoutItem(item api.CheckoutParams) *api.CheckoutItemReceipt {
 }
 
 func (d *sqlDB) ReturnItem(id int) bool {
-    sql := "UPDATE CHECKOUTS SET returned = TRUE WHERE item_id=($1)"
+    sql := "UPDATE CHECKOUTS SET returned = TRUE WHERE id=($1)"
 
     rows, err := d.db.Query(sql, id)
 
