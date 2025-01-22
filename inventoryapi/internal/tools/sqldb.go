@@ -4,26 +4,27 @@ import (
 	"database/sql"
 	"fmt"
 	"inventoryapi/api"
-	"log"
 	"time"
 
 	"os"
 
 	_ "github.com/lib/pq"
 	"gopkg.in/yaml.v3"
+	log "github.com/sirupsen/logrus"
 )
 
 type sqlDB struct{
     db *sql.DB
 }
 
-func (d *sqlDB) GetItems() *[]api.Item {
+func (d *sqlDB) GetItems() (*[]api.Item, error) {
     sql := "SELECT id, name, description, quantity FROM items"
 
     rows, err := d.db.Query(sql)
 
     if err != nil {
-        log.Fatal(err)
+        log.Error(err)
+        return nil, err
     }
 
     defer rows.Close()
@@ -48,7 +49,7 @@ func (d *sqlDB) GetItems() *[]api.Item {
         })
     }
 
-    return &items
+    return &items, nil
 }
 
 type sqlDBCredentials struct {
@@ -88,13 +89,14 @@ func (d *sqlDB) CloseDatabase() error {
     return d.db.Close()
 }
 
-func (d *sqlDB) GetItem(id int) *[]api.Item{
+func (d *sqlDB) GetItem(id int) (*[]api.Item, error) {
     sql := "SELECT id, name, description, quantity FROM items where id=($1)"
 
     rows, err := d.db.Query(sql, id)
 
     if err != nil {
-        log.Fatal("Failed to fetch item")
+        log.Errorf("%sFailed to fetch item", err)
+        return nil, err
     }
 
     defer rows.Close()
@@ -117,14 +119,18 @@ func (d *sqlDB) GetItem(id int) *[]api.Item{
         Quantity: itemQuantity,
     }}
 
-    return &item
+    return &item, nil
 }
 
-func (d *sqlDB) AddItem(item api.NewItem) *int {
+func (d *sqlDB) AddItem(item api.NewItem) (*int, error) {
     sql := "INSERT INTO items (name, description, quantity) VALUES (($1), ($2), ($3)) RETURNING id"
 
     rows, err := d.db.Query(sql, item.Name, item.Description, item.Quantity)
 
+    if err != nil {
+        log.Errorf("%sFailed to fetch item", err)
+        return nil, err
+    }
     if err != nil {
         log.Fatal("Failed to add item")
     }
@@ -138,39 +144,40 @@ func (d *sqlDB) AddItem(item api.NewItem) *int {
         log.Fatal(err)
     }
 
-    return &itemId
+    return &itemId, nil
 }
 
-func (d *sqlDB) UpdateItem(item api.Item) bool {
+func (d *sqlDB) UpdateItem(item api.Item) error {
     sql := "UPDATE items SET name=($1), description=($2), quantity=($3) WHERE id=($4)"
 
     rows, err := d.db.Query(sql, item.Name, item.Description, item.Quantity, item.Id)
 
     if err != nil {
-        log.Fatalf("Failed to add item ERROR: %s", err)
+        log.Errorf("%sFailed to fetch item", err)
+        return err
     }
 
     rows.Close()
 
-    return true
+    return nil
 }
 
-func (d *sqlDB) DeleteItem(id int) bool {
+func (d *sqlDB) DeleteItem(id int) error {
     sql := "DELETE FROM items WHERE id=(($1))"
 
     rows, err := d.db.Query(sql, id)
 
     if err != nil {
-        log.Fatal("Failed to delete item")
-        return false
+        log.Errorf("%sFailed to fetch item", err)
+        return err
     }
 
     rows.Close()
 
-    return true
+    return nil
 }
 
-func (d *sqlDB) CheckoutItem(item api.CheckoutParams) *api.CheckoutItemReceipt {
+func (d *sqlDB) CheckoutItem(item api.CheckoutParams) (*api.CheckoutItemReceipt, error) {
     sql := "INSERT INTO checkouts (item_id, name, email, checkout_date) VALUES (($1), ($2), ($3), ($4))"
 
     checkoutDate := time.Now()
@@ -178,7 +185,8 @@ func (d *sqlDB) CheckoutItem(item api.CheckoutParams) *api.CheckoutItemReceipt {
     rows, err := d.db.Query(sql, item.Id, item.Name, item.Email, checkoutDate)
 
     if err != nil {
-        log.Fatal("Checkout Failed")
+        log.Errorf("%sFailed to fetch item", err)
+        return nil, err
     }
 
     rows.Close()
@@ -190,30 +198,32 @@ func (d *sqlDB) CheckoutItem(item api.CheckoutParams) *api.CheckoutItemReceipt {
         Date: checkoutDate,
     }
 
-    return &resp
+    return &resp, nil
 }
 
-func (d *sqlDB) ReturnItem(id int) bool {
+func (d *sqlDB) ReturnItem(id int) error {
     sql := "UPDATE CHECKOUTS SET returned = TRUE WHERE id=($1)"
 
     rows, err := d.db.Query(sql, id)
 
     if err != nil {
-        log.Fatal("Return Failed")
+        log.Errorf("%sFailed to fetch item", err)
+        return err
     }
 
     rows.Close()
 
-    return true;
+    return nil
 }
 
-func (d *sqlDB) GetCheckouts() *[]api.CheckoutItem {
+func (d *sqlDB) GetCheckouts() (*[]api.CheckoutItem, error) {
     sql := "SELECT checkouts.id, items.name, checkouts.name, email, checkout_date, returned FROM checkouts INNER JOIN items ON items.id = checkouts.item_id"
 
     rows,  err := d.db.Query(sql)
 
     if err != nil {
-        log.Fatal("Get Checkouts Failed", err)
+        log.Errorf("%sFailed to fetch item", err)
+        return nil, err
     }
 
     defer rows.Close()
@@ -242,5 +252,5 @@ func (d *sqlDB) GetCheckouts() *[]api.CheckoutItem {
         })
     }
 
-    return &checkouts
+    return &checkouts, nil
 }

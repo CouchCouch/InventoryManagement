@@ -33,9 +33,8 @@ func DeleteItems(w http.ResponseWriter, r *http.Request) {
 
     defer (*database).CloseDatabase()
 
-    var success bool
-    success = (*database).DeleteItem(params.Id)
-    if success == false {
+    err = (*database).DeleteItem(params.Id)
+    if err != nil {
         log.Error(err)
         api.InternalErrorHandler(w)
         return

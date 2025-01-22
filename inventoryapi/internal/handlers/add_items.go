@@ -35,9 +35,8 @@ func AddItems(w http.ResponseWriter, r *http.Request) {
 
     defer (*database).CloseDatabase()
 
-    var itemId *int
-    itemId = (*database).AddItem(params)
-    if(itemId == nil) {
+    itemId, err := (*database).AddItem(params)
+    if(err != nil) {
         log.Error(err)
         api.InternalErrorHandler(w)
         return

@@ -35,9 +35,8 @@ func UpdateItem(w http.ResponseWriter, r *http.Request) {
 
     defer (*database).CloseDatabase()
 
-    var success bool
-    success = (*database).UpdateItem(params)
-    if success == false {
+    err = (*database).UpdateItem(params)
+    if err != nil {
         log.Error(err)
         api.InternalErrorHandler(w)
         return

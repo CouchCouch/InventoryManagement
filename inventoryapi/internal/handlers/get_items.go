@@ -35,11 +35,12 @@ func GetItems(w http.ResponseWriter, r *http.Request) {
 
     var items *[]api.Item
     if params.Id != 0 {
-        items = (*database).GetItem(params.Id)
+        items, err = (*database).GetItem(params.Id)
     } else {
-        items = (*database).GetItems()
+        items, err = (*database).GetItems()
     }
-    if items == nil {
+
+    if err != nil {
         log.Error(err)
         api.InternalErrorHandler(w)
         return

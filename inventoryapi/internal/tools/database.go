@@ -6,14 +6,14 @@ import (
 )
 
 type DatabaseInterface interface {
-    GetItems() *[]api.Item
-    GetItem(int) *[]api.Item
-    AddItem(api.NewItem) *int
-    UpdateItem(api.Item) bool
-    DeleteItem(int) bool
-    CheckoutItem(api.CheckoutParams) *api.CheckoutItemReceipt
-    ReturnItem(int) bool
-    GetCheckouts() *[]api.CheckoutItem
+    GetItems() (*[]api.Item, error)
+    GetItem(int) (*[]api.Item, error)
+    AddItem(api.NewItem) (*int, error)
+    UpdateItem(api.Item) error
+    DeleteItem(int)  error
+    CheckoutItem(api.CheckoutParams) (*api.CheckoutItemReceipt, error)
+    ReturnItem(int)  error
+    GetCheckouts() (*[]api.CheckoutItem, error)
     SetupDatabase() error
     CloseDatabase() error
 }
