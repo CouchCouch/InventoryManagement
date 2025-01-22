@@ -33,9 +33,8 @@ func ReturnItem(w http.ResponseWriter, r *http.Request) {
 
     defer (*database).CloseDatabase()
 
-    var success bool
-    success = (*database).ReturnItem(params.Id)
-    if success == false {
+    err = (*database).ReturnItem(params.Id)
+    if err != nil {
         log.Error(err)
         api.InternalErrorHandler(w)
         return

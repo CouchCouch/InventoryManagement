@@ -35,9 +35,8 @@ func CheckoutItem(w http.ResponseWriter, r *http.Request) {
 
     defer (*database).CloseDatabase()
 
-    var receipt *api.CheckoutItemReceipt
-    receipt = (*database).CheckoutItem(params)
-    if receipt == nil {
+    receipt, err := (*database).CheckoutItem(params)
+    if err != nil {
         log.Error(err)
         api.InternalErrorHandler(w)
         return

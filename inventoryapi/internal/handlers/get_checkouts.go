@@ -23,9 +23,12 @@ func GetCheckouts(w http.ResponseWriter, r *http.Request) {
 
     defer (*database).CloseDatabase()
 
-    var checkouts *[]api.CheckoutItem
-
-    checkouts = (*database).GetCheckouts()
+    checkouts, err := (*database).GetCheckouts()
+    if err != nil {
+        log.Error(err)
+        api.InternalErrorHandler(w)
+        return
+    }
 
     var response = api.CheckoutResponse{
         Code: http.StatusOK,
