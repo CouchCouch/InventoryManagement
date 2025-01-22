@@ -17,7 +17,7 @@ A simple inventory tracking system with basic CRUD operations using PostgreSQL, 
 - [x] Delete Items
 
 ### Checkout Functionality
-- [ ] Checkout
+- [x] Checkout (checkouts do not update automatically after a checkout is completed)
 - [x] Return
 - [x] View all checked out items (caveat, does not filter by returned items)
 
