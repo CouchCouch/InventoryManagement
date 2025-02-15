@@ -18,7 +18,7 @@ type sqlDB struct{
 }
 
 func (d *sqlDB) GetItems() (*[]api.Item, error) {
-    sql := "SELECT id, name, description, quantity FROM items"
+    sql := "SELECT id, name, description, quantity FROM items ORDER BY id ASC"
 
     rows, err := d.db.Query(sql)
 
@@ -217,7 +217,7 @@ func (d *sqlDB) ReturnItem(id int) error {
 }
 
 func (d *sqlDB) GetCheckouts() (*[]api.CheckoutItem, error) {
-    sql := "SELECT checkouts.id, items.name, checkouts.name, email, checkout_date, returned FROM checkouts INNER JOIN items ON items.id = checkouts.item_id"
+    sql := "SELECT checkouts.id, items.name, checkouts.name, email, checkout_date, returned FROM checkouts INNER JOIN items ON items.id = checkouts.item_id ORDER BY checkout_date DESC"
 
     rows,  err := d.db.Query(sql)
 
