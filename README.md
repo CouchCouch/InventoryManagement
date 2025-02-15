@@ -25,3 +25,6 @@ A simple inventory tracking system with basic CRUD operations using PostgreSQL, 
 - [ ] Search inventory
 - [ ] Export Items
 - [ ] Import Items
+
+
+[colorscheme](https://coolors.co/bf4e30-c6ccb2-093824-e5eafa-78fecf)
