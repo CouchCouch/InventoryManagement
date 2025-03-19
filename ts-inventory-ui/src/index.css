@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+    --color-bg_dim: #1E2326;
+    --color-bg0: #272E33;
+    --color-bg1: #2E383C;
+    --color-bg2: #374145;
+    --color-bg3: #414B50;
+    --color-bg4: #495156;
+    --color-bg5: #4F5B58;
+
+    --color-bg_red: #4C3743;
+    --color-bg_visual: #493B40;
+    --color-bg_yellow: #45443C;
+    --color-bg_green: #3C4841;
+    --color-bg_blue: #384B55;
+
+    --color-red: #E67E80;
+    --color-orange: #E69875;
+    --color-yellow: #DBBC7F;
+    --color-green: #A7C080;
+    --color-blue: #7FBBB3;
+    --color-aqua: #83C092;
+    --color-purple: #D699B6;
+
+    --color-fg: #D3C6AA;
+    --color-statusline1: #A7C080;
+    --color-statusline1: #D3C6AA;
+    --color-statusline1: #E67E80;
+    --color-gray0: #7A8478;
+    --color-gray1: #859289;
+    --color-gray2: #9DA9A0;
+}
+
+* {
+    @apply text-fg;
+}
+
+h1 {
+    @apply text-2xl font-bold
+}
+
+p {
+    @apply text-lg;
+}
+
+body {
+    @apply bg-bg_dim;
+}
+
+.btn {
+    @apply font-bold py-2 px-4 rounded-lg cursor-pointer;
+}
+
+.btn-create {
+    @apply bg-bg_green;
+}
+
+.btn-create:hover {
+    @apply text-green;
+}
+
+.btn-danger {
+    @apply bg-bg_red;
+}
+
+.btn-danger:hover {
+    @apply text-red;
+}
+
+.btn-edit {
+    @apply bg-bg_blue;
+}
+
+.btn-edit:hover {
+    @apply text-blue;
+}
