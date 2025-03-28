@@ -23,7 +23,7 @@ func (d *sqlDB) GetItems() (*[]api.Item, error) {
     rows, err := d.db.Query(sql)
 
     if err != nil {
-        log.Error(err)
+        log.Errorf("Failed to fetch items: %s", err)
         return nil, err
     }
 
@@ -38,7 +38,8 @@ func (d *sqlDB) GetItems() (*[]api.Item, error) {
         var itemQuantity int
 
         if err := rows.Scan(&itemId, &itemName, &itemDescription, &itemQuantity); err != nil {
-            log.Fatal(err)
+            log.Errorf("Failed to fetch items: %s", err)
+            return nil, err
         }
 
         items = append(items, api.Item{
@@ -95,12 +96,11 @@ func (d *sqlDB) GetItem(id int) (*[]api.Item, error) {
     rows, err := d.db.Query(sql, id)
 
     if err != nil {
-        log.Errorf("%sFailed to fetch item", err)
+        log.Errorf("Failed to fetch item: %s", err)
         return nil, err
     }
 
     defer rows.Close()
-
 
     rows.Next()
     var itemId int
@@ -109,7 +109,8 @@ func (d *sqlDB) GetItem(id int) (*[]api.Item, error) {
     var itemQuantity int
 
     if err := rows.Scan(&itemId, &itemName, &itemDescription, &itemQuantity); err != nil {
-        log.Fatal(err)
+        log.Errorf("Failed to fetch item: %s", err)
+        return nil, err
     }
 
     item := []api.Item{{
@@ -128,11 +129,8 @@ func (d *sqlDB) AddItem(item api.NewItem) (*int, error) {
     rows, err := d.db.Query(sql, item.Name, item.Description, item.Quantity)
 
     if err != nil {
-        log.Errorf("%sFailed to fetch item", err)
+        log.Errorf("Failed to add item: %s", err)
         return nil, err
-    }
-    if err != nil {
-        log.Fatal("Failed to add item")
     }
 
     defer rows.Close()
@@ -141,7 +139,8 @@ func (d *sqlDB) AddItem(item api.NewItem) (*int, error) {
     var itemId int
 
     if err := rows.Scan(&itemId); err != nil {
-        log.Fatal(err)
+        log.Error(err)
+        return nil, err
     }
 
     return &itemId, nil
@@ -153,7 +152,7 @@ func (d *sqlDB) UpdateItem(item api.Item) error {
     rows, err := d.db.Query(sql, item.Name, item.Description, item.Quantity, item.Id)
 
     if err != nil {
-        log.Errorf("%sFailed to fetch item", err)
+        log.Errorf("Failed to update item: %s", err)
         return err
     }
 
@@ -168,7 +167,7 @@ func (d *sqlDB) DeleteItem(id int) error {
     rows, err := d.db.Query(sql, id)
 
     if err != nil {
-        log.Errorf("%sFailed to fetch item", err)
+        log.Errorf("Failed to delete item: %s", err)
         return err
     }
 
@@ -185,7 +184,7 @@ func (d *sqlDB) CheckoutItem(item api.CheckoutParams) (*api.CheckoutItemReceipt,
     rows, err := d.db.Query(sql, item.Id, item.Name, item.Email, checkoutDate)
 
     if err != nil {
-        log.Errorf("%sFailed to fetch item", err)
+        log.Errorf("Failed to checkout item: %s", err)
         return nil, err
     }
 
@@ -207,7 +206,7 @@ func (d *sqlDB) ReturnItem(id int) error {
     rows, err := d.db.Query(sql, id)
 
     if err != nil {
-        log.Errorf("%sFailed to fetch item", err)
+        log.Errorf("Failed to return item: %s", err)
         return err
     }
 
@@ -217,12 +216,12 @@ func (d *sqlDB) ReturnItem(id int) error {
 }
 
 func (d *sqlDB) GetCheckouts() (*[]api.CheckoutItem, error) {
-    sql := "SELECT checkouts.id, items.name, checkouts.name, email, checkout_date, returned FROM checkouts INNER JOIN items ON items.id = checkouts.item_id ORDER BY checkout_date DESC"
+    sql := "SELECT checkouts.id, checkouts.item_id, items.name, checkouts.name, email, checkout_date, returned FROM checkouts INNER JOIN items ON items.id = checkouts.item_id ORDER BY checkout_date DESC"
 
     rows,  err := d.db.Query(sql)
 
     if err != nil {
-        log.Errorf("%sFailed to fetch item", err)
+        log.Errorf("Failed to fetch checkout: %s", err)
         return nil, err
     }
 
@@ -232,18 +231,61 @@ func (d *sqlDB) GetCheckouts() (*[]api.CheckoutItem, error) {
 
     for rows.Next() {
         var id int
+        var itemId int
         var itemName string
         var name string
         var email string
         var date time.Time
         var returned bool
 
-        if err := rows.Scan(&id, &itemName, &name, &email, &date, &returned); err != nil {
+        if err := rows.Scan(&id, &itemId, &itemName, &name, &email, &date, &returned); err != nil {
             log.Fatal(err)
         }
 
         checkouts = append(checkouts, api.CheckoutItem{
             Id: id,
+            ItemId: itemId,
+            ItemName: itemName,
+            Name: name,
+            Email: email,
+            Date: date,
+            Returned: returned,
+        })
+    }
+
+    return &checkouts, nil
+}
+
+func (d *sqlDB) GetCheckout(id int) (*[]api.CheckoutItem, error) {
+    sql := "SELECT checkouts.id, checkouts.item_id, items.name, checkouts.name, email, checkout_date, returned FROM checkouts INNER JOIN items ON items.id = checkouts.item_id WHERE checkouts.item_id=($1) ORDER BY checkout_date DESC"
+
+    rows,  err := d.db.Query(sql, id)
+
+    if err != nil {
+        log.Errorf("Failed to fetch checkout: %s", err)
+        return nil, err
+    }
+
+    defer rows.Close()
+
+    var checkouts []api.CheckoutItem
+
+    for rows.Next() {
+        var id int
+        var itemId int
+        var itemName string
+        var name string
+        var email string
+        var date time.Time
+        var returned bool
+
+        if err := rows.Scan(&id, &itemId, &itemName, &name, &email, &date, &returned); err != nil {
+            log.Fatal(err)
+        }
+
+        checkouts = append(checkouts, api.CheckoutItem{
+            Id: id,
+            ItemId: itemId,
             ItemName: itemName,
             Name: name,
             Email: email,

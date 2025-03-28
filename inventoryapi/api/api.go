@@ -48,6 +48,7 @@ type CheckoutItemReceipt struct {
 
 type CheckoutItem struct {
     Id          int         `json:"id"`
+    ItemId      int         `json:"itemId"`
     ItemName    string      `json:"itemName"`
     Name        string      `json:"name"`
     Email       string      `json:"email"`

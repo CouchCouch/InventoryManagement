@@ -14,6 +14,7 @@ type DatabaseInterface interface {
     CheckoutItem(api.CheckoutParams) (*api.CheckoutItemReceipt, error)
     ReturnItem(int)  error
     GetCheckouts() (*[]api.CheckoutItem, error)
+    GetCheckout(int) (*[]api.CheckoutItem, error)
     SetupDatabase() error
     CloseDatabase() error
 }
