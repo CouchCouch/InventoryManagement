@@ -30,22 +30,60 @@
     --color-gray0: #7A8478;
     --color-gray1: #859289;
     --color-gray2: #9DA9A0;
+
+    --color-l_bg_dim: #F2EFDF;
+    --color-l_bg0: #FFFBEF;
+    --color-l_bg1: #F8F5E4;
+    --color-l_bg2: #F2EFDF;
+    --color-l_bg3: #EDEADA;
+    --color-l_bg4: #E8E5D5;
+    --color-l_bg5: #BEC5B2;
+
+    --color-l_bg_red: #FFE7DE;
+    --color-l_bg_visual: #F0F2D4;
+    --color-l_bg_yellow: #FEF2D5;
+    --color-l_bg_green: #F3F5D9;
+    --color-l_bg_blue: #ECF5ED;
+
+    --color-l_red: #F85552;
+    --color-l_orange: #F57D26;
+    --color-l_yellow: #DFA000;
+    --color-l_green: #8DA101;
+    --color-l_blue: #3A94C5;
+    --color-l_aqua: #35A77c;
+    --color-l_purple: #DF69BA;
+
+    --color-l_fg: #5C6A72;
+    --color-l_statusline1: #93B259;
+    --color-l_statusline1: #708089;
+    --color-l_statusline1: #E66868;
+    --color-l_gray0: #A6B0A0;
+    --color-l_gray1: #939F91;
+    --color-l_gray2: #829181;
 }
 
 * {
-    @apply text-fg;
+    @apply text-l_fg dark:text-fg;
 }
 
 h1 {
     @apply text-2xl font-bold
 }
 
+h2 {
+    @apply text-xl font-bold
+}
+
+h4 {
+    @apply text-base font-semibold;
+}
+
 p {
-    @apply text-lg;
+    @apply text-base;
 }
 
 body {
-    @apply bg-bg_dim;
+    @apply bg-l_bg0 dark:bg-bg0;
 }
 
 .btn {
@@ -53,25 +91,25 @@ body {
 }
 
 .btn-create {
-    @apply bg-bg_green;
+    @apply bg-l_bg_green dark:bg-bg_green ;
 }
 
 .btn-create:hover {
-    @apply text-green;
+    @apply bg-l_green text-l_bg_dim dark:bg-green dark:text-bg_dim;
 }
 
 .btn-danger {
-    @apply bg-bg_red;
+    @apply bg-l_bg_red dark:bg-bg_red;
 }
 
 .btn-danger:hover {
-    @apply text-red;
+    @apply bg-l_red text-l_bg_dim dark:bg-red dark:text-bg_dim;
 }
 
 .btn-edit {
-    @apply bg-bg_blue;
+    @apply bg-l_bg_blue dark:bg-bg_blue;
 }
 
 .btn-edit:hover {
-    @apply text-blue;
+    @apply bg-l_blue text-l_bg_dim dark:bg-blue dark:text-bg_dim;
 }

@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router";
+import ItemsView from "./views/ItemsView";
 import ItemView from "./views/ItemView";
 
 const root = document.getElementById('root');
@@ -7,8 +8,9 @@ const root = document.getElementById('root');
 createRoot(root!).render(
     <BrowserRouter>
         <Routes>
-            <Route path="/" element={<ItemView />} />
-            <Route path="/items" element={<ItemView />} />
+            <Route path="/" element={<ItemsView />} />
+            <Route path="/items" element={<ItemsView />} />
+            <Route path="/item" element={<ItemView />} />
         </Routes>
     </BrowserRouter>
 );

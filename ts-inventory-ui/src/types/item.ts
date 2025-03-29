@@ -24,4 +24,13 @@ async function fetchItems(): Promise<ItemResponse> {
     return data
 }
 
-export { fetchItems }
+async function fetchItem(id: number): Promise<ItemResponse> {
+    const response = await fetch('http://localhost:8080/items?id=' + id)
+    if(!response.ok) {
+        throw response
+    }
+    const data = await response.json()
+    return data
+}
+
+export { fetchItems, fetchItem }

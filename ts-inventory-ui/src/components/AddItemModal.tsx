@@ -19,13 +19,19 @@ function AddItemModal({ open, onClose, addItem }: AddItemModalProps) {
         setQuantity(0)
     }
 
+    const handleClose = () => {
+        addItem(name, description, quantity)
+        resetValues();
+        onClose();
+    }
+
     return (
         <Modal open={open} onClose={onClose} title="Add Item">
             <>
-                <TextInput label="Name" onChange={setName} />
-                <TextInput label="Description" onChange={setDescription} />
+                <TextInput label="Name" onChange={setName} value={name}/>
+                <TextInput label="Description" onChange={setDescription} value={description} />
                 <NumberInput label="Quantity" onChange={setQuantity} />
-                <button className="btn btn-create mt-1 justify-end" onClick={() => {addItem(name, description, quantity); resetValues(); onClose();}}>Add</button>
+                <button className="btn btn-create mt-1 justify-end" onClick={() => handleClose()} value={quantity}>Add</button>
             </>
         </Modal>
     )

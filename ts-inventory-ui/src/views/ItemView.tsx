@@ -1,11 +1,20 @@
+
+import { useSearchParams } from "react-router";
 import { Header } from "../components/Header";
-import ItemDisplay from "../components/ItemsDisplay";
+import Item from "../components/SingleItem";
+import { CheckoutHistory } from "../components/CheckoutHistory";
 
 export default function ItemView() {
+    const [params] = useSearchParams()
+    const id = Number(params.get('id'))
+
     return (
         <>
             <Header />
-            <ItemDisplay />
+            <div className="p-2">
+                <Item id={id} />
+                <CheckoutHistory id={id} />
+            </div>
         </>
     )
 }

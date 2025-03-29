@@ -23,18 +23,18 @@ export default function Modal({ open, onClose, title, children }: ModalProps) {
         <div
             onClick={onClose}
             className={
-                `fixed inset-0 flex justify-center items-center transition-colors ${open ? "visible bg-bg_dim/40" : "invisible"}
+                `fixed inset-0 flex justify-center items-center transition-colors ${open ? "visible bg-l_bg_dim/40 dark:bg-bg_dim/40" : "invisible"}
             `}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
                 className={`
-                    bg-bg1 rounded-xl shadow p-6 transition-all w-auto
+                    bg-l_bg1 dark:bg-bg1 rounded-xl shadow p-6 transition-all w-auto
                     ${open ? "scale-100 opacity-100" : "scale-125 opacity-0"}
                 `}
             >
                 <div className="block text-center">
-                    <h3 className="text-lg font-black text-fg mt-5 mb-1">
+                    <h3 className="text-lg font-black text-l_fg dark:text-fg mt-5 mb-1">
                         {title}
                     </h3>
                     <button

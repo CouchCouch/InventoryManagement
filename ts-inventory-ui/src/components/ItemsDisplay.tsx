@@ -5,6 +5,7 @@ import Modal from "../utilities/Modal"
 import AddItemModal from "./AddItemModal"
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid"
 import { NumberInput, TextInput } from "../utilities/Inputs"
+import { Link } from "react-router"
 
 interface ConfirmDeleteProps {
     item: ItemT,
@@ -65,8 +66,8 @@ function Item({ item, deleteFunction, editFunction }: ItemProps) {
         <div className="mt-2 mb-2 w-full">
             <ConfirmDelete item={item} open={openDelete} onClose={() => setOpenDelete(false)} deleteFunction={deleteFunction} />
             <EditModal item={item} open={openEdit} onClose={() => setOpenEdit(false)} editFunction={editFunction} />
-            <div className="bg-bg1 text-center p-2 rounded-lg">
-                <h1 className="text-xl font-bold mt-2 mb-4">{item.name}</h1>
+            <div className="bg-l_bg1 dark:bg-bg1 text-center p-2 rounded-lg">
+                <h1 className="text-xl font-bold mt-2 mb-4"><Link to={"/item?id="+item.id}>{item.name}</Link></h1>
                 <p className="text-base mb-3">{item.description}</p>
                 <h2 className="text-lg font-semibold pb-2">Quantity: {item.quantity}</h2>
                 <div className="space-x-4">
@@ -82,6 +83,7 @@ function Item({ item, deleteFunction, editFunction }: ItemProps) {
 
 export default function ItemDisplay() {
     const [items, setItems] = useState<ItemT[]>([])
+    const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
     const [open, setOpen] = useState(false)
 
@@ -93,9 +95,11 @@ export default function ItemDisplay() {
         fetchItems().
         then(response => {
                 setItems(response.items)
+                setLoading(false)
             })
             .catch(e => {
                 setError(e)
+                setLoading(false)
                 console.log(e)
             })
     }
@@ -183,6 +187,14 @@ export default function ItemDisplay() {
                 updateItems()
             })
 
+    }
+
+    if(loading) {
+        return (
+            <>
+                <img src = "../src/assets/dragon-beaver.png" className="absolute left-0 right-0 mx-auto h-24 animate-bounce" />
+            </>
+        )
     }
 
     if(error != "") {
