@@ -10,7 +10,7 @@ createRoot(root!).render(
         <Routes>
             <Route path="/" element={<ItemsView />} />
             <Route path="/items" element={<ItemsView />} />
-            <Route path="/item" element={<ItemView />} />
+            <Route path="/items/:itemid" element={<ItemView />} />
         </Routes>
     </BrowserRouter>
 );

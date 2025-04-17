@@ -1,3 +1,5 @@
+import { ItemT } from "./item"
+
 export interface CheckoutT {
     id: number,
     itemId: number,
@@ -27,8 +29,29 @@ async function fetchHistory(id: number): Promise<CheckoutResponse> {
     if(!response.ok) {
         throw response
     }
-    const data = await response.json()
+    const data = response.json()
     return data
 }
 
-export { fetchCheckouts, fetchHistory }
+async function createCheckout(item: ItemT, name: string, email: string) {
+    const body = {
+        "name": name,
+        "email": email,
+        "id": item.id
+    }
+    const response = await fetch('http://localhost:8080/checkout',
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body)
+        })
+    if(!response.ok) {
+        throw response
+    }
+    const data = response.json()
+    return data
+}
+
+export { fetchCheckouts, fetchHistory, createCheckout }

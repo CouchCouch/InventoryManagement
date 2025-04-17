@@ -44,7 +44,7 @@ function EditModal({ item, open, onClose, editFunction}: EditModalProps) {
                 <TextInput label="Name" onChange={setName} value={name} />
                 <TextInput label="Description" onChange={setDescription} value={description} />
                 <NumberInput label="Quantity" onChange={setQuantity} value={quantity}/>
-                <button className="btn btn-create mt-1 justify-end" onClick={() => {editFunction(item, name, description, quantity); onClose()}}>Edit</button>
+                <button className="btn btn-create mt-2 justify-end" onClick={() => {editFunction(item, name, description, quantity); onClose()}}>Save Changes</button>
             </>
         </Modal>
     )
@@ -67,7 +67,7 @@ function Item({ item, deleteFunction, editFunction }: ItemProps) {
             <ConfirmDelete item={item} open={openDelete} onClose={() => setOpenDelete(false)} deleteFunction={deleteFunction} />
             <EditModal item={item} open={openEdit} onClose={() => setOpenEdit(false)} editFunction={editFunction} />
             <div className="bg-l_bg1 dark:bg-bg1 text-center p-2 rounded-lg">
-                <h1 className="text-xl font-bold mt-2 mb-4"><Link to={"/item?id="+item.id}>{item.name}</Link></h1>
+                <h1 className="text-xl font-bold mt-2 mb-4"><Link to={"/items/"+item.id}>{item.name}</Link></h1>
                 <p className="text-base mb-3">{item.description}</p>
                 <h2 className="text-lg font-semibold pb-2">Quantity: {item.quantity}</h2>
                 <div className="space-x-4">
