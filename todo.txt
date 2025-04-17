@@ -1,0 +1,24 @@
+Switch to a framework with routing (probably react router)
+Mostly done
+
+Add asset type ids with a way to search for them or the nam eof item and the auto fill ex MS for Micro Spikes and you can search for MS too quickly input the item for checkout or you could search fro microspike or similar names and it will also auto popualte with the item
+Try to determine what the ids that already exist mean and maybe integrate them
+
+do something cool in the backend
+idrk what to do, auth at some point
+
+Should map out end points
+want an endpoint to only get checked out items
+Real design question: Do i fetch only the data i need and filter in go or fetch all checkouts and filter in ts
+    Go:
+        pros:
+            - Computation Speed
+        cons:
+            - slower actual speed due to network delays
+            - more netowrk traffic
+    TS:
+        pros:
+            - will appear quicker
+        cons:
+            - use more memory on client side
+            - have to use more ts and less go :(
