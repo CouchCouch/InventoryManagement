@@ -18,7 +18,7 @@ func UpdateItem(w http.ResponseWriter, r *http.Request) {
 
 	err = decoder.Decode(&params)
 
-	log.Printf("%s", params)
+	log.Printf("%s", params.String())
 
 	if err != nil {
 		log.Error(err)
