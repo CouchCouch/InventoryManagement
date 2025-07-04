@@ -17,6 +17,15 @@ type sqlDB struct {
 	db *sql.DB
 }
 
+func New(connStr string) (*sqlDB, error) {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sqlDB{db: db}, nil
+}
+
 func (d *sqlDB) GetItems() (*[]api.Item, error) {
 	sql := "SELECT id, name, description, quantity FROM items ORDER BY id ASC"
 
