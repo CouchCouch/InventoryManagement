@@ -63,12 +63,12 @@ function Item({ item, deleteFunction, editFunction }: ItemProps) {
 
 
     return(
-        <div className="mt-2 mb-2 w-full">
+        <div className="w-full">
             <ConfirmDelete item={item} open={openDelete} onClose={() => setOpenDelete(false)} deleteFunction={deleteFunction} />
             <EditModal item={item} open={openEdit} onClose={() => setOpenEdit(false)} editFunction={editFunction} />
             <div className="bg-l_bg1 dark:bg-bg1 text-center p-2 rounded-lg">
-                <h1 className="text-xl font-bold mt-2 mb-4"><Link to={"/items/"+item.id}>{item.name}</Link></h1>
-                <p className="text-base mb-3">{item.description}</p>
+                <h1 className="text-xl font-bold mt-2 mb-2"><Link to={"/items/"+item.id}>{item.name}</Link></h1>
+                <p className="text-base mb-2">{item.description}</p>
                 <h2 className="text-lg font-semibold pb-2">Quantity: {item.quantity}</h2>
                 <div className="space-x-4">
                     <button className="btn btn-danger" onClick={() => setOpenDelete(true)}><TrashIcon className="size-6"/></button>
@@ -208,7 +208,7 @@ export default function ItemDisplay() {
 
     return (
         <div className="m-2">
-            <div className="grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {
                     items.map(item => {
                         return(
@@ -222,7 +222,7 @@ export default function ItemDisplay() {
                     )
                 }
             </div>
-            <button className='btn btn-create' onClick={() => setOpen(true)}>Add Item</button>
+            <button className='btn btn-create mt-2' onClick={() => setOpen(true)}>Add Item</button>
             <AddItemModal open={open} onClose={() => {setOpen(false); updateItems();}} addItem={addItem}/>
         </div>
     )

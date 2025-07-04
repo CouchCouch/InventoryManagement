@@ -28,7 +28,7 @@ export const CheckoutHistory = ({ id }: { id: number }) => {
                 setError(e)
                 console.log(e)
             })
-    }, [])
+    }, [id])
 
     if(error) {
         return (

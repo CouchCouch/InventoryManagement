@@ -18,7 +18,7 @@ export default function Item({ id }: { id: number }) {
                 setError(e)
                 console.log(e)
             })
-    }, [])
+    }, [id])
 
     if(error) {
         return (
