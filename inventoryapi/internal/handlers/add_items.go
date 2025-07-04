@@ -12,46 +12,46 @@ import (
 )
 
 func AddItems(w http.ResponseWriter, r *http.Request) {
-    var params = api.NewItem{}
-    var decoder *json.Decoder = json.NewDecoder(r.Body) // *schema.Decoder = schema.NewDecoder()
-    var err error
+	params := api.NewItem{}
+	var decoder *json.Decoder = json.NewDecoder(r.Body) // *schema.Decoder = schema.NewDecoder()
+	var err error
 
-    err = decoder.Decode(&params)
+	err = decoder.Decode(&params)
 
-    log.Printf("%s", params)
+	log.Printf("%s", params.String())
 
-    if err != nil {
-        log.Error(err)
-        api.InternalErrorHandler(w)
-        return
-    }
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    var database *tools.DatabaseInterface
-    database, err = tools.NewDatabase()
-    if err != nil {
-        api.InternalErrorHandler(w)
-        return
-    }
+	var database *tools.DatabaseInterface
+	database, err = tools.NewDatabase()
+	if err != nil {
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    defer (*database).CloseDatabase()
+	defer (*database).CloseDatabase()
 
-    itemId, err := (*database).AddItem(params)
-    if(err != nil) {
-        log.Error(err)
-        api.InternalErrorHandler(w)
-        return
-    }
+	itemId, err := (*database).AddItem(params)
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    var response = api.NewItemResponse{
-        Code: http.StatusOK,
-        Id: *itemId,
-    }
+	response := api.NewItemResponse{
+		Code: http.StatusOK,
+		Id:   *itemId,
+	}
 
-    w.Header().Add("Content-Type", "application/json")
-    err = json.NewEncoder(w).Encode(response)
-    if err != nil {
-        log.Error(err)
-        api.InternalErrorHandler(w)
-        return
-    }
+	w.Header().Add("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 }

@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+@theme {
+    --color-bg_dim: #1E2326;
+    --color-bg0: #272E33;
+    --color-bg1: #2E383C;
+    --color-bg2: #374145;
+    --color-bg3: #414B50;
+    --color-bg4: #495156;
+    --color-bg5: #4F5B58;
+
+    --color-bg_red: #4C3743;
+    --color-bg_visual: #493B40;
+    --color-bg_yellow: #45443C;
+    --color-bg_green: #3C4841;
+    --color-bg_blue: #384B55;
+
+    --color-red: #E67E80;
+    --color-orange: #E69875;
+    --color-yellow: #DBBC7F;
+    --color-green: #A7C080;
+    --color-blue: #7FBBB3;
+    --color-aqua: #83C092;
+    --color-purple: #D699B6;
+
+    --color-fg: #D3C6AA;
+    --color-statusline1: #A7C080;
+    --color-statusline1: #D3C6AA;
+    --color-statusline1: #E67E80;
+    --color-gray0: #7A8478;
+    --color-gray1: #859289;
+    --color-gray2: #9DA9A0;
+
+    --color-l_bg_dim: #F2EFDF;
+    --color-l_bg0: #FFFBEF;
+    --color-l_bg1: #F8F5E4;
+    --color-l_bg2: #F2EFDF;
+    --color-l_bg3: #EDEADA;
+    --color-l_bg4: #E8E5D5;
+    --color-l_bg5: #BEC5B2;
+
+    --color-l_bg_red: #FFE7DE;
+    --color-l_bg_visual: #F0F2D4;
+    --color-l_bg_yellow: #FEF2D5;
+    --color-l_bg_green: #F3F5D9;
+    --color-l_bg_blue: #ECF5ED;
+
+    --color-l_red: #F85552;
+    --color-l_orange: #F57D26;
+    --color-l_yellow: #DFA000;
+    --color-l_green: #8DA101;
+    --color-l_blue: #3A94C5;
+    --color-l_aqua: #35A77c;
+    --color-l_purple: #DF69BA;
+
+    --color-l_fg: #5C6A72;
+    --color-l_statusline1: #93B259;
+    --color-l_statusline1: #708089;
+    --color-l_statusline1: #E66868;
+    --color-l_gray0: #A6B0A0;
+    --color-l_gray1: #939F91;
+    --color-l_gray2: #829181;
+}
+
+* {
+    @apply text-l_fg dark:text-fg;
+}
+
+h1 {
+    @apply text-2xl font-bold
+}
+
+h2 {
+    @apply text-xl font-bold
+}
+
+h4 {
+    @apply text-base font-semibold;
+}
+
+p {
+    @apply text-base;
+}
+
+body {
+    @apply bg-l_bg0 dark:bg-bg0;
+}
+
+.btn {
+    @apply font-bold py-2 px-4 rounded-lg cursor-pointer;
+}
+
+.btn-create {
+    @apply bg-l_bg_green dark:bg-bg_green ;
+}
+
+.btn-create:hover {
+    @apply bg-l_green text-l_bg_dim dark:bg-green dark:text-bg_dim;
+}
+
+.btn-danger {
+    @apply bg-l_bg_red dark:bg-bg_red;
+}
+
+.btn-danger:hover {
+    @apply bg-l_red text-l_bg_dim dark:bg-red dark:text-bg_dim;
+}
+
+.btn-edit {
+    @apply bg-l_bg_blue dark:bg-bg_blue;
+}
+
+.btn-edit:hover {
+    @apply bg-l_blue text-l_bg_dim dark:bg-blue dark:text-bg_dim;
+}

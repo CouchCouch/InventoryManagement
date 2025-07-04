@@ -12,52 +12,51 @@ import (
 )
 
 func GetItems(w http.ResponseWriter, r *http.Request) {
-    var params = api.ItemParams{}
-    var decoder *schema.Decoder = schema.NewDecoder()
-    var err error
+	params := api.ItemParams{}
+	var decoder *schema.Decoder = schema.NewDecoder()
+	var err error
 
-    err = decoder.Decode(&params, r.URL.Query())
+	err = decoder.Decode(&params, r.URL.Query())
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    if err != nil {
-        log.Error(err)
-        api.InternalErrorHandler(w)
-        return
-    }
+	var database *tools.DatabaseInterface
+	database, err = tools.NewDatabase()
+	if err != nil {
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    var database *tools.DatabaseInterface
-    database, err = tools.NewDatabase()
-    if err != nil {
-        api.InternalErrorHandler(w)
-        return
-    }
+	defer (*database).CloseDatabase()
 
-    defer (*database).CloseDatabase()
+	var items *[]api.Item
+	if params.Id != 0 {
+		items, err = (*database).GetItem(params.Id)
+	} else {
+		items, err = (*database).GetItems()
+	}
 
-    var items *[]api.Item
-    if params.Id != 0 {
-        items, err = (*database).GetItem(params.Id)
-    } else {
-        items, err = (*database).GetItems()
-    }
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    if err != nil {
-        log.Error(err)
-        api.InternalErrorHandler(w)
-        return
-    }
+	response := api.ItemResponse{
+		Code:  http.StatusOK,
+		Items: *items,
+	}
 
-    var response = api.ItemResponse{
-        Code: http.StatusOK,
-        Items: *items,
-    }
+	// api.EnableCors(&w)
 
-    //api.EnableCors(&w)
-
-    w.Header().Add("Content-Type", "application/json")
-    err = json.NewEncoder(w).Encode(response)
-    if err != nil {
-        log.Error(err)
-        api.InternalErrorHandler(w)
-        return
-    }
+	w.Header().Add("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 }

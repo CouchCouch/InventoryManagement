@@ -12,41 +12,40 @@ import (
 )
 
 func DeleteItems(w http.ResponseWriter, r *http.Request) {
-    var params = api.ItemParams{}
-    var decoder *schema.Decoder = schema.NewDecoder()
-    var err error
+	params := api.ItemParams{}
+	var decoder *schema.Decoder = schema.NewDecoder()
+	var err error
 
-    err = decoder.Decode(&params, r.URL.Query())
+	err = decoder.Decode(&params, r.URL.Query())
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    if err != nil {
-        log.Error(err)
-        api.InternalErrorHandler(w)
-        return
-    }
+	var database *tools.DatabaseInterface
+	database, err = tools.NewDatabase()
+	if err != nil {
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    var database *tools.DatabaseInterface
-    database, err = tools.NewDatabase()
-    if err != nil {
-        api.InternalErrorHandler(w)
-        return
-    }
+	defer (*database).CloseDatabase()
 
-    defer (*database).CloseDatabase()
+	err = (*database).DeleteItem(params.Id)
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    err = (*database).DeleteItem(params.Id)
-    if err != nil {
-        log.Error(err)
-        api.InternalErrorHandler(w)
-        return
-    }
+	response := http.StatusOK
 
-    var response = http.StatusOK
-
-    w.Header().Add("Content-Type", "application/json")
-    err = json.NewEncoder(w).Encode(response)
-    if err != nil {
-        log.Error(err)
-        api.InternalErrorHandler(w)
-        return
-    }
+	w.Header().Add("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 }

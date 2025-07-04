@@ -7,39 +7,53 @@ import (
 	"inventoryapi/api"
 	"inventoryapi/internal/tools"
 
-	// "github.com/gorilla/schema"
+	"github.com/gorilla/schema"
 	log "github.com/sirupsen/logrus"
 )
 
 func GetCheckouts(w http.ResponseWriter, r *http.Request) {
-    var err error
+	params := api.ItemParams{}
+	decoder := schema.NewDecoder()
+	var err error
 
-    var database *tools.DatabaseInterface
-    database, err = tools.NewDatabase()
-    if err != nil {
-        api.InternalErrorHandler(w)
-        return
-    }
+	err = decoder.Decode(&params, r.URL.Query())
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    defer (*database).CloseDatabase()
+	var database *tools.DatabaseInterface
+	database, err = tools.NewDatabase()
+	if err != nil {
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    checkouts, err := (*database).GetCheckouts()
-    if err != nil {
-        log.Error(err)
-        api.InternalErrorHandler(w)
-        return
-    }
+	defer (*database).CloseDatabase()
 
-    var response = api.CheckoutResponse{
-        Code: http.StatusOK,
-        Checkouts: *checkouts,
-    }
+	var checkouts *[]api.CheckoutItem
+	if params.Id != 0 {
+		checkouts, err = (*database).GetCheckout(params.Id)
+	} else {
+		checkouts, err = (*database).GetCheckouts()
+	}
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 
-    w.Header().Add("Content-Type", "application/json")
-    err = json.NewEncoder(w).Encode(response)
-    if err != nil {
-        log.Error(err)
-        api.InternalErrorHandler(w)
-        return
-    }
+	response := api.CheckoutResponse{
+		Code:      http.StatusOK,
+		Checkouts: *checkouts,
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		log.Error(err)
+		api.InternalErrorHandler(w)
+		return
+	}
 }

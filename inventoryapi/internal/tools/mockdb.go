@@ -1,35 +1,36 @@
 package tools
 
 import (
-	"inventoryapi/api"
 	"time"
+
+	"inventoryapi/api"
 )
 
 type mockDB struct{}
 
 var mockItems = []api.Item{
-    {
-        Id: 2,
-        Name: "crash pad",
-        Description: "climbing crash pad",
-        Quantity: 2,
-    },
-    {
-        Id: 1,
-        Name: "microspikes",
-        Description: "",
-        Quantity: 1,
-    },
+	{
+		Id:          2,
+		Name:        "crash pad",
+		Description: "climbing crash pad",
+		Quantity:    2,
+	},
+	{
+		Id:          1,
+		Name:        "microspikes",
+		Description: "",
+		Quantity:    1,
+	},
 }
 
 func (d *mockDB) GetItems() *[]api.Item {
-    time.Sleep(time.Second * 1)
+	time.Sleep(time.Second * 1)
 
-    var clientData = mockItems
+	clientData := mockItems
 
-    return &clientData
+	return &clientData
 }
 
 func (d *mockDB) SetupDatabase() error {
-    return nil
+	return nil
 }
