@@ -20,9 +20,6 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.24'
-      run: go install mvdan.cc/gofumpt@latest
-    - name: Fomat
-      run: go fupmt ./inventoryapi/.
 
     - name: Build
       run: go build -v ./inventoryapi/.
