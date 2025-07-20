@@ -137,3 +137,4 @@ func (e *Error) String() string {
 	return fmt.Sprintf("Error{Code: %d, Message: %s}", e.Code, e.Message)
 }
 
+// hello this is going to be a really long sentence so
