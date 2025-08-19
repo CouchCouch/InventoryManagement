@@ -1,8 +1,9 @@
 package tools
 
 import (
-	log "github.com/sirupsen/logrus"
 	"inventoryapi/api"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type DatabaseInterface interface {

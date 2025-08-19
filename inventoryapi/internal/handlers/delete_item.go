@@ -2,10 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
-	"net/http"
-
 	"inventoryapi/api"
 	"inventoryapi/internal/tools"
+	"net/http"
 
 	"github.com/gorilla/schema"
 	log "github.com/sirupsen/logrus"

@@ -3,15 +3,16 @@ package tools
 import (
 	"database/sql"
 	"fmt"
+	"inventoryapi/api"
 	"os"
 	"time"
-
-	"inventoryapi/api"
 
 	_ "github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
+
+const defaultPostgrgesPort = 5432
 
 type sqlDB struct {
 	db *sql.DB

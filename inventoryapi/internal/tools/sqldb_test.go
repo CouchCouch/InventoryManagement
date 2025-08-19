@@ -2,11 +2,10 @@ package tools
 
 import (
 	"context"
+	"inventoryapi/api"
 	"log"
 	"os"
 	"testing"
-
-	"inventoryapi/api"
 
 	_ "github.com/lib/pq"
 )

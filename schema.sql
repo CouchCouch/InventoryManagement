@@ -1,17 +1,34 @@
-CREATE TABLE items  (
-    id SERIAL PRIMARY KEY NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    quantity INTEGER NOT NULL
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
 );
 
-CREATE TABLE checkouts (
-    id SERIAL PRIMARY KEY NOT NULL,
-    item_id INTEGER,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    checkout_date DATE NOT NULL,
-    returned BOOLEAN DEFAULT FALSE,
-    emailed BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY(item_id) REFERENCES items(id)
+CREATE TABLE IF NOT EXISTS admins (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(50) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
 );
+
+CREATE TABLE IF NOT EXISTS item_types (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS checkouts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    checkout_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    return_date TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS items (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    identifiers TEXT,
+    item_type_id INTEGER NOT NULL REFERENCES item_types(id) ON DELETE SET NULL,
+    checkout_id INTEGER REFERENCES checkouts(id) ON DELETE SET NULL,
+);
+

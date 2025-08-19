@@ -1,9 +1,8 @@
 package tools
 
 import (
-	"time"
-
 	"inventoryapi/api"
+	"time"
 )
 
 type mockDB struct{}
