@@ -31,6 +31,8 @@ const (
 	createUserQuery = `INSERT INTO users (first_name, last_name, email) VALUES ($1, $2, $3) RETURNING id;`
 	updateUserQuery = `UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4;`
 	deleteUserQuery = `UPDATE users SET deleted = TRUE WHERE id = $1;`
+
+	makeUserAdminQuery = `UPDATE admins SET user_id=$1, password_hash=$2 WHERE role==$3`
 )
 
 func (d *db) Users() (*[]domain.User, error) {
@@ -87,6 +89,14 @@ func (d *db) UpdateUser(user *domain.User) error {
 
 func (d *db) DeleteUser(id int) error {
 	_, err := d.DB.Exec(deleteUserQuery, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *db) MakeUserAdmin(userID int, passwordHash string, role string) error {
+	_, err := d.DB.Exec(makeUserAdminQuery, userID, passwordHash, role)
 	if err != nil {
 		return err
 	}

@@ -1,3 +1,5 @@
+const APIURL = 'http://localhost:3000/api/'
+
 import { ItemT } from "./item"
 
 export interface CheckoutT {
@@ -16,7 +18,7 @@ export interface CheckoutResponse {
 }
 
 async function fetchCheckouts(): Promise<CheckoutResponse> {
-  const response = await fetch('http://localhost:8080/checkout')
+  const response = await fetch(`${APIURL}/checkout`)
   if(!response.ok) {
     throw response
   }
@@ -25,7 +27,7 @@ async function fetchCheckouts(): Promise<CheckoutResponse> {
 }
 
 async function fetchHistory(id: number): Promise<CheckoutResponse> {
-  const response = await fetch('http://localhost:8080/checkout?id=' + id)
+  const response = await fetch(`${APIURL}/checkout?id=` + id)
   if(!response.ok) {
     throw response
   }
@@ -39,7 +41,7 @@ async function createCheckout(item: ItemT, name: string, email: string) {
     "email": email,
     "id": item.id
   }
-  const response = await fetch('http://localhost:8080/checkout',
+  const response = await fetch(`${APIURL}/checkout`,
     {
       method: "POST",
       headers: {

@@ -1,3 +1,5 @@
+const APIURL = 'http://localhost:3000/api/'
+
 export interface ItemT {
   id: number,
   name: string,
@@ -16,7 +18,7 @@ export interface NewItemResponse {
 }
 
 async function fetchItems(): Promise<ItemResponse> {
-  const response = await fetch('http://localhost:8080/items')
+  const response = await fetch(`${APIURL}items`)
   if(!response.ok) {
     throw response
   }
@@ -25,7 +27,7 @@ async function fetchItems(): Promise<ItemResponse> {
 }
 
 async function fetchItem(id: number): Promise<ItemResponse> {
-  const response = await fetch('http://localhost:8080/items?id=' + id)
+  const response = await fetch(`${APIURL}/items?id=` + id)
   if(!response.ok) {
     throw response
   }

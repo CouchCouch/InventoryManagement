@@ -6,6 +6,7 @@ import AddItemModal from "./AddItemModal"
 import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/solid"
 import { NumberInput, TextInput } from "../utilities/Inputs"
 import { Link } from "react-router"
+import dragonBeaver from '../assets/dragon-beaver.png';
 
 interface ConfirmDeleteProps {
   item: ItemT,
@@ -192,7 +193,7 @@ export default function ItemDisplay() {
   if(loading) {
     return (
       <>
-        <img src = "../src/assets/dragon-beaver.png" className="absolute left-0 right-0 mx-auto h-24 animate-bounce" />
+        <img src={ dragonBeaver } className="absolute left-0 right-0 mx-auto h-24 animate-bounce" />
       </>
     )
   }

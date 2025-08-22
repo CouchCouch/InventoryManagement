@@ -45,7 +45,6 @@ const (
 		it.name as item_type,
 		ci.return_date
 	FROM checkouts c
-	JOIN users u ON c.user_id = u.id
 	LEFT JOIN checkout_items ci ON c.id = ci.checkout_id
 	LEFT JOIN items i ON ci.item_id = i.id
 	LEFT JOIN item_types it ON i.item_type_id = it.id
