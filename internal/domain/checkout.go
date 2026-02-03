@@ -3,7 +3,7 @@ package domain
 import "time"
 
 type Checkout struct {
-	ID           int            `json:"id"`
+	ID           int
 	User         User           `json:"user"`
 	Items        []CheckoutItem `json:"items"`
 	CheckoutDate time.Time      `json:"checkout_date"`

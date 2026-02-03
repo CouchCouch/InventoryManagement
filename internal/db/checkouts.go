@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"inventory/internal/domain"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -17,16 +19,9 @@ const (
 		u.first_name,
 		u.last_name,
 		u.email,
-		c.created_by,
-		i.id as item_id,
-		i.name as item_name,
-		it.name as item_type,
-		ci.return_date
+		c.created_by
 	FROM checkouts c
 	JOIN users u ON c.user_id = u.id
-	LEFT JOIN checkout_items ci ON c.id = ci.checkout_id
-	LEFT JOIN items i ON ci.item_id = i.id
-	LEFT JOIN item_types it ON i.item_type_id = it.id
 	ORDER BY c.id DESC;
 	`
 
@@ -59,7 +54,7 @@ const (
 	returnItemQuery = `UPDATE checkout_items SET return_date = CURRENT_TIMESTAMP WHERE checkout_id = $1 AND item_id = $2 AND return_date IS NULL;`
 )
 
-func (d *db) Checkouts() (*[]domain.Checkout, error) {
+func (d *DB) Checkouts() (*[]domain.Checkout, error) {
 	rows, err := d.DB.Query(getCheckoutsQuery)
 	if err != nil {
 		return nil, err
@@ -71,7 +66,7 @@ func (d *db) Checkouts() (*[]domain.Checkout, error) {
 		var checkoutID int
 		var checkoutDate time.Time
 		var checkoutNotes sql.NullString
-		var userID int
+		var userID uuid.UUID
 		var userFirstName, userLastName, userEmail string
 		var createdBy int
 		var itemID, itemName, itemType sql.NullString
@@ -112,20 +107,6 @@ func (d *db) Checkouts() (*[]domain.Checkout, error) {
 			}
 			checkoutsMap[checkoutID] = checkout
 		}
-
-		if itemID.Valid {
-			checkoutItem := domain.CheckoutItem{
-				Item: domain.Item{
-					ID:   itemID.String,
-					Name: itemName.String,
-					Type: itemType.String,
-				},
-			}
-			if returnDate.Valid {
-				checkoutItem.ReturnDate = returnDate.Time
-			}
-			checkout.Items = append(checkout.Items, checkoutItem)
-		}
 	}
 
 	checkouts := make([]domain.Checkout, 0, len(checkoutsMap))
@@ -136,7 +117,7 @@ func (d *db) Checkouts() (*[]domain.Checkout, error) {
 	return &checkouts, nil
 }
 
-func (d *db) Checkout(id int) (*domain.Checkout, error) {
+func (d *DB) Checkout(id int) (*domain.Checkout, error) {
 	rows, err := d.DB.Query(getCheckoutByIDQuery, id)
 	if err != nil {
 		return nil, err
@@ -148,7 +129,7 @@ func (d *db) Checkout(id int) (*domain.Checkout, error) {
 		var checkoutID int
 		var checkoutDate time.Time
 		var checkoutNotes sql.NullString
-		var userID int
+		var userID uuid.UUID
 		var userFirstName, userLastName, userEmail string
 		var createdBy int
 		var itemID, itemName, itemType sql.NullString
@@ -212,35 +193,35 @@ func (d *db) Checkout(id int) (*domain.Checkout, error) {
 	return checkout, nil
 }
 
-func (d *db) CreateCheckout(checkout *domain.Checkout) (int, error) {
+func (d *DB) CreateCheckout(checkout *domain.Checkout) error {
 	tx, err := d.DB.Begin()
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	var checkoutID int
 	err = tx.QueryRow(createCheckoutQuery, checkout.User.ID, checkout.Notes, checkout.CreatedBy).Scan(&checkoutID)
 	if err != nil {
 		tx.Rollback()
-		return 0, err
+		return err
 	}
 
 	for _, checkoutItem := range checkout.Items {
 		if _, err := tx.Exec(addCheckoutItemQuery, checkoutID, checkoutItem.Item.ID); err != nil {
 			tx.Rollback()
-			return 0, err
+			return err
 		}
 	}
 
-	return checkoutID, tx.Commit()
+	return tx.Commit()
 }
 
-func (d *db) UpdateCheckout(checkout *domain.Checkout) error {
+func (d *DB) UpdateCheckout(checkout *domain.Checkout) error {
 	_, err := d.DB.Exec(updateCheckoutQuery, checkout.Notes, checkout.ID)
 	return err
 }
 
-func (d *db) ReturnItem(checkoutID int, itemID string) error {
+func (d *DB) ReturnItem(checkoutID int, itemID string) error {
 	res, err := d.DB.Exec(returnItemQuery, checkoutID, itemID)
 	if err != nil {
 		return err

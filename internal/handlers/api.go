@@ -1,31 +1,44 @@
 package handlers
 
 import (
-	"github.com/go-chi/chi/v5"
-	chimiddle "github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
+	"inventory/internal/db"
+	"net/http"
+	"strings"
+
+	"github.com/gin-gonic/contrib/static"
+	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
-func Handler(r *chi.Mux) {
-	r.Use(chimiddle.StripSlashes)
-	r.Use(chimiddle.Logger)
-	r.Use(chimiddle.RequestID)
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"*"}, // Use this to allow specific origin hosts
-		// AllowedOrigins:   []string{"https://*", "http://*"},
-		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300, // Maximum value not ignored by any of major browsers
-	}))
+type APIHandler struct {
+	db *db.DB
+}
 
-	r.Get("/items", GetItems)
-	r.Post("/items", AddItems)
-	r.Delete("/items", DeleteItems)
-	r.Put("/items", UpdateItem)
-	r.Post("/checkout", CheckoutItem)
-	r.Put("/checkout", ReturnItem)
-	r.Get("/checkout", GetCheckouts)
+func Handle(r *gin.Engine, db *db.DB) {
+	APIHandlerInstance := &APIHandler{db: db}
+	api := r.Group("/api")
+	{
+		itemsAPI := api.Group("/items")
+		{
+			itemsAPI.GET("", APIHandlerInstance.GetItemsHandler)
+			itemsAPI.POST("", APIHandlerInstance.AddItemHandler)
+		}
+		checkoutsAPI := api.Group("/checkouts")
+		{
+			checkoutsAPI.GET("", APIHandlerInstance.GetCheckoutsHandler)
+			checkoutsAPI.POST("", APIHandlerInstance.CreateCheckoutHandler)
+		}
+	}
+	r.Use(static.Serve("/", static.LocalFile("./web/dist", true)))
+	r.NoRoute(func(c *gin.Context) {
+		if !strings.HasPrefix(c.Request.URL.Path, "/api") {
+			index, err := static.LocalFile("./web/dist", true).Open("index.html")
+			if err != nil {
+				log.Error(err)
+			}
+			defer index.Close()
+			stat, _ := index.Stat()
+			http.ServeContent(c.Writer, c.Request, "index.html", stat.ModTime(), index)
+		}
+	})
 }

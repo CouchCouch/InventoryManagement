@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	log "github.com/sirupsen/logrus"
+	"inventory/internal/config"
+	"inventory/internal/db"
 	"inventory/internal/handlers"
+
+	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 const inventoryAPIText = `
@@ -21,13 +23,21 @@ const inventoryAPIText = `
 	`
 
 func main() {
-	log.SetReportCaller(true)
-	var r *chi.Mux = chi.NewRouter()
-	handlers.Handler(r)
-
 	fmt.Println(inventoryAPIText)
-	err := http.ListenAndServe("localhost:8080", r)
+	conf, err := config.GetConfig()
 	if err != nil {
-		log.Error(err)
+		log.Fatal("failed to load config", err)
+	}
+	log.SetReportCaller(true)
+	log.SetLevel(log.DebugLevel)
+	r := gin.Default()
+	db, err := db.NewDBWithSchema(conf.DB)
+	if err != nil {
+		log.Fatal("failed to setup db ", err)
+	}
+	handlers.Handle(r, db)
+	r.Run(conf.API.Addr())
+	if err != nil {
+		log.Fatal(err)
 	}
 }

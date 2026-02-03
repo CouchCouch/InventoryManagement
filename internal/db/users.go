@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"inventory/internal/domain"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -14,8 +16,7 @@ const (
 		first_name,
 		last_name,
 		email
-	FROM users
-	WHERE deleted = FALSE;
+	FROM users;
 	`
 
 	getUserByIDQuery = `
@@ -25,17 +26,27 @@ const (
 		last_name,
 		email
 	FROM users
-	WHERE id = $1 AND deleted = FALSE;
+	WHERE id = $1;
 	`
 
-	createUserQuery = `INSERT INTO users (first_name, last_name, email) VALUES ($1, $2, $3) RETURNING id;`
-	updateUserQuery = `UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4;`
-	deleteUserQuery = `UPDATE users SET deleted = TRUE WHERE id = $1;`
+	getUserByEmailQuery = `
+	SELECT
+		id,
+		first_name,
+		last_name,
+		email
+	FROM users
+	WHERE email = $1;
+	`
 
-	makeUserAdminQuery = `UPDATE admins SET user_id=$1, password_hash=$2 WHERE role==$3`
+	createUserQuery = `
+	INSERT INTO users (first_name, last_name, email) VALUES ($1, $2, $3) RETURNING id
+	ON CONFLICT (email) RETURNING id;
+	`
 )
 
-func (d *db) Users() (*[]domain.User, error) {
+// Users retrieves all users from the database
+func (d *DB) Users() (*[]domain.User, error) {
 	rows, err := d.DB.Query(getUsersQuery)
 	if err != nil {
 		return nil, err
@@ -56,7 +67,8 @@ func (d *db) Users() (*[]domain.User, error) {
 	return &users, nil
 }
 
-func (d *db) User(id int) (*domain.User, error) {
+// User retrieves a user by their ID
+func (d *DB) User(id int) (*domain.User, error) {
 	row := d.DB.QueryRow(getUserByIDQuery, id)
 
 	var user domain.User
@@ -70,35 +82,26 @@ func (d *db) User(id int) (*domain.User, error) {
 	return &user, nil
 }
 
-func (d *db) CreateUser(user *domain.User) (int, error) {
-	var id int
+// User retrieves a user by their Email
+func (d *DB) UserByEmail(email string) (*domain.User, error) {
+	row := d.DB.QueryRow(getUserByEmailQuery, email)
+
+	var user domain.User
+	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+// CreateUser creates a new user in the database, is there is already a user with the given email, the user id is returned
+func (d *DB) CreateUser(user *domain.User) (uuid.UUID, error) {
+	var id uuid.UUID
 	err := d.DB.QueryRow(createUserQuery, user.FirstName, user.LastName, user.Email).Scan(&id)
 	if err != nil {
-		return 0, err
+		return uuid.Nil, err
 	}
 	return id, nil
-}
-
-func (d *db) UpdateUser(user *domain.User) error {
-	_, err := d.DB.Exec(updateUserQuery, user.FirstName, user.LastName, user.Email, user.ID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *db) DeleteUser(id int) error {
-	_, err := d.DB.Exec(deleteUserQuery, id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *db) MakeUserAdmin(userID int, passwordHash string, role string) error {
-	_, err := d.DB.Exec(makeUserAdminQuery, userID, passwordHash, role)
-	if err != nil {
-		return err
-	}
-	return nil
 }
