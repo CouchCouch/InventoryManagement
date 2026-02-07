@@ -32,6 +32,10 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 	r := gin.Default()
 	db, err := db.NewDBWithSchema(conf.DB)
+	err = db.MakeUserAdmin(conf.Admin.GetAdmin())
+	if err != nil {
+		log.Fatal("failed to add admin", err)
+	}
 	if err != nil {
 		log.Fatal("failed to setup db ", err)
 	}

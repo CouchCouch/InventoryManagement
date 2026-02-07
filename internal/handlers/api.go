@@ -28,6 +28,11 @@ func Handle(r *gin.Engine, db *db.DB) {
 			checkoutsAPI.GET("", APIHandlerInstance.GetCheckoutsHandler)
 			checkoutsAPI.POST("", APIHandlerInstance.CreateCheckoutHandler)
 		}
+		authAPI := api.Group("/auth")
+		{
+			authAPI.POST("/login", APIHandlerInstance.LoginHandler)
+			authAPI.POST("/logout", APIHandlerInstance.LogoutHandler)
+		}
 	}
 	r.Use(static.Serve("/", static.LocalFile("./web/dist", true)))
 	r.NoRoute(func(c *gin.Context) {

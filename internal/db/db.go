@@ -22,16 +22,14 @@ const (
 
 	CREATE TABLE IF NOT EXISTS public.users (
 		id UUID PRIMARY KEY,
-		first_name VARCHAR(50) NOT NULL,
-		last_name VARCHAR(50) NOT NULL,
-		email VARCHAR(100) NOT NULL,
-		CONSTRAINT users_email_first_name_last_name_key unique(email, first_name, last_name)
+		name VARCHAR(50) NOT NULL,
+		email VARCHAR(100) NOT NULL UNIQUE,
 	);
 
 	CREATE TABLE IF NOT EXISTS admins (
 		user_id UUID REFERENCES users(id) PRIMARY KEY,
 		role eboard_position NOT NULL,
-		password_hash VARCHAR(255),
+		password_hash VARCHAR(32),
 		active BOOLEAN NOT NULL DEFAULT TRUE
 	);
 
@@ -82,13 +80,17 @@ const (
 	getSchemaVersion = `SELECT version FROM schema_version`
 	updateSchemaVersion = `UPDATE schema_version SET version = $1`
 
-	schema_version = 2
+	schema_version = 3
 )
 
 var (
 	migrations = []string{
 		`ALTER TABLE items ADD COLUMN date_purchased TIMESTAMP DEFAULT NULL;`,
 		`ALTER TABLE item_types ADD UNIQUE (name)`,
+		`
+		ALTER TABLE users DROP COLUMN first_name;
+		ALTER TABLE users RENAME COLUMN last_name TO name;
+		`,
 	}
 )
 

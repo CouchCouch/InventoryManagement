@@ -16,8 +16,7 @@ const (
 		c.checkout_date,
 		c.notes,
 		u.id as user_id,
-		u.first_name,
-		u.last_name,
+		u.name,
 		u.email,
 		c.created_by
 	FROM checkouts c
@@ -31,7 +30,6 @@ const (
 		c.checkout_date,
 		c.notes,
 		u.id as user_id,
-		u.first_name,
 		u.last_name,
 		u.email,
 		c.created_by,
@@ -67,7 +65,7 @@ func (d *DB) Checkouts() (*[]domain.Checkout, error) {
 		var checkoutDate time.Time
 		var checkoutNotes sql.NullString
 		var userID uuid.UUID
-		var userFirstName, userLastName, userEmail string
+		var userName, userEmail string
 		var createdBy int
 		var itemID, itemName, itemType sql.NullString
 		var returnDate sql.NullTime
@@ -77,8 +75,7 @@ func (d *DB) Checkouts() (*[]domain.Checkout, error) {
 			&checkoutDate,
 			&checkoutNotes,
 			&userID,
-			&userFirstName,
-			&userLastName,
+			&userName,
 			&userEmail,
 			&createdBy,
 			&itemID,
@@ -99,8 +96,7 @@ func (d *DB) Checkouts() (*[]domain.Checkout, error) {
 				CreatedBy:    createdBy,
 				User: domain.User{
 					ID:        userID,
-					FirstName: userFirstName,
-					LastName:  userLastName,
+					Name:  userName,
 					Email:     userEmail,
 				},
 				Items: []domain.CheckoutItem{},
@@ -130,7 +126,7 @@ func (d *DB) Checkout(id int) (*domain.Checkout, error) {
 		var checkoutDate time.Time
 		var checkoutNotes sql.NullString
 		var userID uuid.UUID
-		var userFirstName, userLastName, userEmail string
+		var userName, userEmail string
 		var createdBy int
 		var itemID, itemName, itemType sql.NullString
 		var returnDate sql.NullTime
@@ -140,8 +136,7 @@ func (d *DB) Checkout(id int) (*domain.Checkout, error) {
 			&checkoutDate,
 			&checkoutNotes,
 			&userID,
-			&userFirstName,
-			&userLastName,
+			&userName,
 			&userEmail,
 			&createdBy,
 			&itemID,
@@ -161,8 +156,7 @@ func (d *DB) Checkout(id int) (*domain.Checkout, error) {
 				CreatedBy:    createdBy,
 				User: domain.User{
 					ID:        userID,
-					FirstName: userFirstName,
-					LastName:  userLastName,
+					Name:  userName,
 					Email:     userEmail,
 				},
 				Items: []domain.CheckoutItem{},

@@ -13,8 +13,7 @@ const (
 	getUsersQuery = `
 	SELECT
 		id,
-		first_name,
-		last_name,
+		name,
 		email
 	FROM users;
 	`
@@ -22,8 +21,7 @@ const (
 	getUserByIDQuery = `
 	SELECT
 		id,
-		first_name,
-		last_name,
+		name,
 		email
 	FROM users
 	WHERE id = $1;
@@ -32,16 +30,15 @@ const (
 	getUserByEmailQuery = `
 	SELECT
 		id,
-		first_name,
-		last_name,
+		name,
 		email
 	FROM users
 	WHERE email = $1;
 	`
 
 	createUserQuery = `
-	INSERT INTO users (first_name, last_name, email) VALUES ($1, $2, $3) RETURNING id
-	ON CONFLICT (email) RETURNING id;
+	INSERT INTO users (id, name, email) VALUES ($1, $2, $3)
+	ON CONFLICT (email) DO UPDATE SET email = excluded.email RETURNING id;
 	`
 )
 
@@ -56,7 +53,7 @@ func (d *DB) Users() (*[]domain.User, error) {
 	var users []domain.User
 	for rows.Next() {
 		var user domain.User
-		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Email); err != nil {
 			return nil, err
 		}
 		users = append(users, user)
@@ -72,7 +69,7 @@ func (d *DB) User(id int) (*domain.User, error) {
 	row := d.DB.QueryRow(getUserByIDQuery, id)
 
 	var user domain.User
-	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email)
+	err := row.Scan(&user.ID, &user.Name, &user.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("user not found")
@@ -87,7 +84,7 @@ func (d *DB) UserByEmail(email string) (*domain.User, error) {
 	row := d.DB.QueryRow(getUserByEmailQuery, email)
 
 	var user domain.User
-	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email)
+	err := row.Scan(&user.ID, &user.Name, &user.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("user not found")
@@ -98,8 +95,8 @@ func (d *DB) UserByEmail(email string) (*domain.User, error) {
 }
 // CreateUser creates a new user in the database, is there is already a user with the given email, the user id is returned
 func (d *DB) CreateUser(user *domain.User) (uuid.UUID, error) {
-	var id uuid.UUID
-	err := d.DB.QueryRow(createUserQuery, user.FirstName, user.LastName, user.Email).Scan(&id)
+	id := uuid.New()
+	err := d.DB.QueryRow(createUserQuery, id, user.Name, user.Email).Scan(&id)
 	if err != nil {
 		return uuid.Nil, err
 	}

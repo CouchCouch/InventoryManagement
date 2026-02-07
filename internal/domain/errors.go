@@ -13,6 +13,8 @@ const (
 	ErrCodeInvalidItemType = "invalid_item_type"
 	// ErrCodeWrongSchema is returned when the database schema is incorrect.
 	ErrCodeWrongSchema = "wrong_schema"
+	// ErrCodeWrongPassword is returned when the login password is wrong
+	ErrCodeWrongPassword = "wrong_password"
 )
 
 var (
@@ -21,4 +23,5 @@ var (
 	ErrInvalidItemID        = errors.New(ErrCodeInvalidItemID)
 	ErrInvalidItemType      = errors.New(ErrCodeInvalidItemType)
 	ErrWrongSchema      = errors.New(ErrCodeWrongSchema)
+	ErrWrongPassword = errors.New(ErrCodeWrongPassword)
 )

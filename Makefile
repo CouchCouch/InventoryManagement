@@ -2,8 +2,7 @@ build: build-web
 	go build -o bin/app main.go
 
 build-web:
-	cd web
-	pnpm run build
+	cd web && pnpm run build
 
 format:
 	gofmt -w .
