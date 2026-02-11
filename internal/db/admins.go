@@ -2,10 +2,9 @@ package db
 
 import (
 	"encoding/base64"
-	"inventory/internal/domain"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	"inventory/internal/domain"
+
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/argon2"
 )
@@ -71,7 +70,6 @@ func (d *DB) MakeUserAdmin(admin domain.Admin) error {
 	return tx.Commit()
 }
 
-
 func (d *DB) DeactivateAdmin(admin domain.Admin) error {
 	_, err := d.DB.Exec(deactivateAdminQuery, admin.User.ID)
 	return err
@@ -89,7 +87,7 @@ func (d *DB) Login(admin domain.Admin) error {
 
 	stringHash := base64.RawStdEncoding.EncodeToString(hashedPassword)
 	sentinel := true
-	for i, _ := range stringHash {
+	for i := range stringHash {
 		if stringHash[i] != actualHash[i] {
 			sentinel = false
 		}
@@ -99,23 +97,4 @@ func (d *DB) Login(admin domain.Admin) error {
 	} else {
 		return domain.ErrWrongPassword
 	}
-}
-
-var jwtKey = []byte("rfc")
-var RefreshSecret = []byte("rfc-rerfresh")
-
-func GenerateJWT(username string) (string, error) {
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-        "username": username,
-        "exp":      time.Now().Add(time.Hour * 1).Unix(),
-    })
-    return token.SignedString(jwtKey)
-}
-
-func GenerateRefreshToken(username string) (string, error) {
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-        "username": username,
-        "exp":      time.Now().Add(time.Hour * 24 * 7).Unix(),
-    })
-    return token.SignedString(RefreshSecret)
 }

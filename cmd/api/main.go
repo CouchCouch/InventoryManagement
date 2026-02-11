@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"inventory/internal/auth"
 	"inventory/internal/config"
 	"inventory/internal/db"
 	"inventory/internal/handlers"
@@ -31,6 +32,7 @@ func main() {
 	log.SetReportCaller(true)
 	log.SetLevel(log.DebugLevel)
 	r := gin.Default()
+	authService := auth.NewAuthService(conf.Auth.JWTSecret, conf.Auth.JWTRrefreshSecret)
 	db, err := db.NewDBWithSchema(conf.DB)
 	err = db.MakeUserAdmin(conf.Admin.GetAdmin())
 	if err != nil {
@@ -39,7 +41,7 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to setup db ", err)
 	}
-	handlers.Handle(r, db)
+	handlers.Handle(r, db, authService)
 	r.Run(conf.API.Addr())
 	if err != nil {
 		log.Fatal(err)

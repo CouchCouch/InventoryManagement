@@ -1,9 +1,11 @@
 package handlers
 
 import (
-	"inventory/internal/db"
 	"net/http"
 	"strings"
+
+	"inventory/internal/auth"
+	"inventory/internal/db"
 
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
@@ -11,27 +13,27 @@ import (
 )
 
 type APIHandler struct {
-	db *db.DB
+	db   *db.DB
+	auth *auth.AuthService
 }
 
-func Handle(r *gin.Engine, db *db.DB) {
-	APIHandlerInstance := &APIHandler{db: db}
+func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService) {
+	APIHandlerInstance := &APIHandler{db: db, auth: auth}
 	api := r.Group("/api")
 	{
 		itemsAPI := api.Group("/items")
 		{
 			itemsAPI.GET("", APIHandlerInstance.GetItemsHandler)
-			itemsAPI.POST("", APIHandlerInstance.AddItemHandler)
+			itemsAPI.POST("", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.AddItemHandler)
 		}
 		checkoutsAPI := api.Group("/checkouts")
 		{
-			checkoutsAPI.GET("", APIHandlerInstance.GetCheckoutsHandler)
-			checkoutsAPI.POST("", APIHandlerInstance.CreateCheckoutHandler)
+			checkoutsAPI.GET("", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.GetCheckoutsHandler)
+			checkoutsAPI.POST("", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.CreateCheckoutHandler)
 		}
 		authAPI := api.Group("/auth")
 		{
 			authAPI.POST("/login", APIHandlerInstance.LoginHandler)
-			authAPI.POST("/logout", APIHandlerInstance.LogoutHandler)
 		}
 	}
 	r.Use(static.Serve("/", static.LocalFile("./web/dist", true)))

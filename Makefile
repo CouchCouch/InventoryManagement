@@ -5,7 +5,7 @@ build-web:
 	cd web && pnpm run build
 
 format:
-	gofmt -w .
+	gofumpt -w .
 
 lint:
 	golangci-lint run

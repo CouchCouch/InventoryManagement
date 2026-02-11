@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+
 	"inventory/internal/config"
 
 	_ "github.com/lib/pq"
@@ -77,22 +78,20 @@ const (
 	INSERT INTO schema_version (version) VALUES ($1);
 	`
 
-	getSchemaVersion = `SELECT version FROM schema_version`
+	getSchemaVersion    = `SELECT version FROM schema_version`
 	updateSchemaVersion = `UPDATE schema_version SET version = $1`
 
 	schema_version = 3
 )
 
-var (
-	migrations = []string{
-		`ALTER TABLE items ADD COLUMN date_purchased TIMESTAMP DEFAULT NULL;`,
-		`ALTER TABLE item_types ADD UNIQUE (name)`,
-		`
+var migrations = []string{
+	`ALTER TABLE items ADD COLUMN date_purchased TIMESTAMP DEFAULT NULL;`,
+	`ALTER TABLE item_types ADD UNIQUE (name)`,
+	`
 		ALTER TABLE users DROP COLUMN first_name;
 		ALTER TABLE users RENAME COLUMN last_name TO name;
 		`,
-	}
-)
+}
 
 type DB struct {
 	DB *sql.DB
@@ -134,7 +133,7 @@ func NewDBWithSchema(conf config.PGConfig) (*DB, error) {
 	if row.Err() == nil {
 		row.Scan(&version)
 		if version == schema_version {
-			return &DB{ DB: postgresDB }, nil
+			return &DB{DB: postgresDB}, nil
 		} else {
 			return runMigrations(postgresDB, version)
 		}
@@ -144,5 +143,5 @@ func NewDBWithSchema(conf config.PGConfig) (*DB, error) {
 		return nil, err
 	}
 
-	return &DB{ DB: postgresDB }, nil
+	return &DB{DB: postgresDB}, nil
 }

@@ -82,7 +82,7 @@ func (d *DB) Items() (*[]domain.Item, error) {
 			ID:            id,
 			Name:          name,
 			Type:          item_type,
-			Notes: 		   notes,
+			Notes:         notes,
 			DatePurchased: date_purchased,
 		})
 	}
@@ -108,7 +108,7 @@ func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
 			ID:            id,
 			Name:          name,
 			Type:          item_type,
-			Notes: 		   notes,
+			Notes:         notes,
 			DatePurchased: date_purchased,
 		})
 	}
@@ -197,6 +197,7 @@ func (d *DB) AddItem(item *domain.Item) error {
 	// Assuming item type ID is fetched from the database or passed in some way
 	itemTypeID, err := d.AddItemType(item.Type)
 	if err != nil {
+		log.Error("Error adding item type: ", err)
 		return err
 	}
 	log.Infof("Item Type: %s, id: %d", item.Type, itemTypeID)

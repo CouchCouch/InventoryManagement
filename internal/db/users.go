@@ -93,6 +93,7 @@ func (d *DB) UserByEmail(email string) (*domain.User, error) {
 	}
 	return &user, nil
 }
+
 // CreateUser creates a new user in the database, is there is already a user with the given email, the user id is returned
 func (d *DB) CreateUser(user *domain.User) (uuid.UUID, error) {
 	id := uuid.New()

@@ -2,32 +2,36 @@ package handlers
 
 import (
 	"errors"
-	"inventory/internal/domain"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-)
+	"inventory/internal/domain"
 
+	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
+)
 
 func (s *APIHandler) LoginHandler(c *gin.Context) {
 	var admin domain.Admin
 	err := c.ShouldBindBodyWithJSON(&admin)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Malformed Body"})
+		c.JSON(http.StatusBadRequest, gin.H{})
 		return
 	}
 	err = s.db.Login(admin)
 	if err != nil {
 		if errors.Is(err, domain.ErrWrongPassword) {
-			c.JSON(http.StatusOK, gin.H{"login": "Wrong Password"})
+			c.JSON(http.StatusOK, gin.H{})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"login": "success"})
-}
-
-func (s *APIHandler) LogoutHandler(c *gin.Context) {
-	c.JSON(http.StatusBadRequest, gin.H{"error": "Login Not Implemented"})
+	tokenString, err := s.auth.GenerateJWT(admin.User.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		log.Error("Error generating JWT: ", err)
+		return
+	}
+	c.Header("Authorization", "Bearer "+tokenString)
+	c.JSON(http.StatusOK, gin.H{})
 }

@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"inventory/internal/domain"
 	"net/http"
 	"strings"
+
+	"inventory/internal/domain"
 
 	"github.com/gin-gonic/gin"
 )

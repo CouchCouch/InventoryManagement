@@ -18,10 +18,10 @@ const (
 )
 
 var (
-	ErrItemNotFound         = errors.New(ErrCodeItemNotFound)
-	ErrItemAlreadyExists    = errors.New(ErrCodeItemAlreadyExists)
-	ErrInvalidItemID        = errors.New(ErrCodeInvalidItemID)
-	ErrInvalidItemType      = errors.New(ErrCodeInvalidItemType)
-	ErrWrongSchema      = errors.New(ErrCodeWrongSchema)
-	ErrWrongPassword = errors.New(ErrCodeWrongPassword)
+	ErrItemNotFound      = errors.New(ErrCodeItemNotFound)
+	ErrItemAlreadyExists = errors.New(ErrCodeItemAlreadyExists)
+	ErrInvalidItemID     = errors.New(ErrCodeInvalidItemID)
+	ErrInvalidItemType   = errors.New(ErrCodeInvalidItemType)
+	ErrWrongSchema       = errors.New(ErrCodeWrongSchema)
+	ErrWrongPassword     = errors.New(ErrCodeWrongPassword)
 )

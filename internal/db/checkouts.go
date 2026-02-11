@@ -95,9 +95,9 @@ func (d *DB) Checkouts() (*[]domain.Checkout, error) {
 				Notes:        checkoutNotes.String,
 				CreatedBy:    createdBy,
 				User: domain.User{
-					ID:        userID,
+					ID:    userID,
 					Name:  userName,
-					Email:     userEmail,
+					Email: userEmail,
 				},
 				Items: []domain.CheckoutItem{},
 			}
@@ -155,9 +155,9 @@ func (d *DB) Checkout(id int) (*domain.Checkout, error) {
 				Notes:        checkoutNotes.String,
 				CreatedBy:    createdBy,
 				User: domain.User{
-					ID:        userID,
+					ID:    userID,
 					Name:  userName,
-					Email:     userEmail,
+					Email: userEmail,
 				},
 				Items: []domain.CheckoutItem{},
 			}

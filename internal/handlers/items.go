@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"inventory/internal/domain"
 	"net/http"
 	"strings"
+
+	"inventory/internal/domain"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -28,7 +29,7 @@ func (s *APIHandler) GetItemsHandler(c *gin.Context) {
 
 func (s *APIHandler) AddItemHandler(c *gin.Context) {
 	item := domain.Item{}
-	err := c.ShouldBindJSON(&item);
+	err := c.ShouldBindJSON(&item)
 	if err != nil {
 		log.Error(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -42,5 +43,3 @@ func (s *APIHandler) AddItemHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, "item added successfully")
 }
-
-

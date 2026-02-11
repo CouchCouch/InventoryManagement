@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"inventory/internal/domain"
 	"net/http"
+
+	"inventory/internal/domain"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"

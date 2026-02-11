@@ -2,8 +2,9 @@ package config
 
 import (
 	"fmt"
-	"inventory/internal/domain"
 	"os"
+
+	"inventory/internal/domain"
 
 	yaml "gopkg.in/yaml.v3"
 )
@@ -23,7 +24,7 @@ type PGConfig struct {
 
 type APIConfig struct {
 	Host string `yaml:"host"`
-	Port int `yaml:"port"`
+	Port int    `yaml:"port"`
 }
 
 type AdminConfig struct {
@@ -33,10 +34,16 @@ type AdminConfig struct {
 	Role     string `yaml:"role"`
 }
 
+type AuthConfig struct {
+	JWTSecret         string `yaml:"jwt_secret"`
+	JWTRrefreshSecret string `yaml:"jwt_refresh_secret"`
+}
+
 type Config struct {
-	API APIConfig `yaml:"api"`
-	DB 	PGConfig  `yaml:"postgres"`
+	API   APIConfig   `yaml:"api"`
+	DB    PGConfig    `yaml:"postgres"`
 	Admin AdminConfig `yaml:"admin"`
+	Auth  AuthConfig  `yaml:"auth"`
 }
 
 func GetConfig() (*Config, error) {
@@ -62,10 +69,10 @@ func (c *PGConfig) ConnStr() string {
 func (c *AdminConfig) GetAdmin() domain.Admin {
 	return domain.Admin{
 		User: domain.User{
-			Name: c.Name,
+			Name:  c.Name,
 			Email: c.Email,
 		},
-		Role: c.Role,
+		Role:     c.Role,
 		Password: c.Password,
 	}
 }
