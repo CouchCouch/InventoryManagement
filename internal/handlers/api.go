@@ -25,6 +25,7 @@ func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService) {
 		{
 			itemsAPI.GET("", APIHandlerInstance.GetItemsHandler)
 			itemsAPI.POST("", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.AddItemHandler)
+			itemsAPI.DELETE("", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.DeleteItemHandler)
 		}
 		checkoutsAPI := api.Group("/checkouts")
 		{

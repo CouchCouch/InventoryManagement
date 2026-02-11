@@ -5,10 +5,10 @@ import (
 	"errors"
 	"regexp"
 	"strings"
-	"time"
 
 	"inventory/internal/domain"
 
+	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -58,7 +58,7 @@ const (
 	getTypeIDQuery       = `SELECT id FROM item_types WHERE name LIKE $1;`
 	insertItemTypeQuery  = `
 	INSERT INTO item_types (name) VALUES ($1)
-	ON CONFLICT (name) DO NOTHING RETURNING id;
+	ON CONFLICT (name) DO UPDATE SET name = excluded.name RETURNING id;
 	`
 )
 
@@ -73,18 +73,27 @@ func (d *DB) Items() (*[]domain.Item, error) {
 	items := make([]domain.Item, 0)
 	for rows.Next() {
 		var id, name, item_type, notes string
-		var date_purchased time.Time
+		var date_purchased sql.NullTime
 		err := rows.Scan(&id, &name, &item_type, &notes, &date_purchased)
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, domain.Item{
-			ID:            id,
-			Name:          name,
-			Type:          item_type,
-			Notes:         notes,
-			DatePurchased: date_purchased,
-		})
+		if date_purchased.Valid {
+			items = append(items, domain.Item{
+				ID:            id,
+				Name:          name,
+				Type:          item_type,
+				Notes:         notes,
+				DatePurchased: date_purchased.Time.Format("02-01-2006"),
+			})
+		} else {
+			items = append(items, domain.Item{
+				ID:            id,
+				Name:          name,
+				Type:          item_type,
+				Notes:         notes,
+			})
+		}
 	}
 	return &items, nil
 }
@@ -99,18 +108,28 @@ func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
 	items := make([]domain.Item, 0, len(ids))
 	for rows.Next() {
 		var id, name, item_type, notes string
-		var date_purchased time.Time
+		var date_purchased sql.NullTime
 		err := rows.Scan(&id, &name, &item_type, &notes, &date_purchased)
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, domain.Item{
-			ID:            id,
-			Name:          name,
-			Type:          item_type,
-			Notes:         notes,
-			DatePurchased: date_purchased,
-		})
+		log.Info("Date: ", date_purchased)
+		if date_purchased.Valid {
+			items = append(items, domain.Item{
+				ID:            id,
+				Name:          name,
+				Type:          item_type,
+				Notes:         notes,
+				DatePurchased: date_purchased.Time.Format("02-01-2006"),
+			})
+		} else {
+			items = append(items, domain.Item{
+				ID:            id,
+				Name:          name,
+				Type:          item_type,
+				Notes:         notes,
+			})
+		}
 	}
 
 	return &items, nil
@@ -122,17 +141,28 @@ func (d *DB) Item(id string) (*domain.Item, error) {
 	}
 	row := d.DB.QueryRow(getItemByIDQuery, id)
 	var name, item_type, notes string
-	var date_purchased time.Time
+	var date_purchased sql.NullTime
 	err := row.Scan(&name, &item_type, &notes, &date_purchased)
 	if err != nil {
 		return nil, err
 	}
-	item := &domain.Item{
-		ID:            id,
-		Name:          name,
-		Type:          item_type,
-		Notes:         notes,
-		DatePurchased: date_purchased,
+	item := &domain.Item{}
+	log.Info("Date: ", date_purchased)
+	if date_purchased.Valid {
+		item = &domain.Item{
+			ID:            id,
+			Name:          name,
+			Type:          item_type,
+			Notes:         notes,
+			DatePurchased: date_purchased.Time.Format("02-01-2006"),
+		}
+	} else {
+		item = &domain.Item{
+			ID:            id,
+			Name:          name,
+			Type:          item_type,
+			Notes:         notes,
+		}
 	}
 
 	return item, nil
@@ -171,16 +201,16 @@ func (d *DB) getItemTypeID(itemType string) (int, error) {
 	return id, nil
 }
 
-func (d *DB) AddItemType(itemType string) (int, error) {
+func (d *DB) addItemType(itemType string) (int, error) {
 	if itemType == "" {
-		return -1, errors.New(domain.ErrCodeInvalidItemType)
+		return -1, errors.New("null or empty item type is not allowed")
 	}
 	row := d.DB.QueryRow(insertItemTypeQuery, itemType)
 	var id int
 	err := row.Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return -1, errors.New(domain.ErrCodeInvalidItemType)
+			return -1, domain.ErrInvalidItemType
 		}
 		return -1, err
 	}
@@ -195,13 +225,16 @@ func (d *DB) AddItem(item *domain.Item) error {
 		return errors.New("item name and type cannot be empty")
 	}
 	// Assuming item type ID is fetched from the database or passed in some way
-	itemTypeID, err := d.AddItemType(item.Type)
+	itemTypeID, err := d.addItemType(item.Type)
 	if err != nil {
-		log.Error("Error adding item type: ", err)
 		return err
 	}
-	log.Infof("Item Type: %s, id: %d", item.Type, itemTypeID)
 	_, err = d.DB.Exec(addItemQuery, item.ID, item.Name, item.Notes, itemTypeID, item.DatePurchased)
+	if err != nil {
+		if (err.(*pq.Error).Code == "23505") {
+			return domain.ErrItemAlreadyExists
+		}
+	}
 	return err
 }
 
@@ -214,7 +247,7 @@ func (d *DB) UpdateItem(item *domain.Item) error {
 	}
 	itemTypeID, err := d.getItemTypeID(item.Type)
 	if errors.Is(err, sql.ErrNoRows) {
-		itemTypeID, err = d.AddItemType(item.Type)
+		itemTypeID, err = d.addItemType(item.Type)
 		if err != nil {
 			return err
 		}
