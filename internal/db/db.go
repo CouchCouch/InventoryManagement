@@ -21,7 +21,7 @@ const (
 	    'Secretary'
 	);
 
-	CREATE TABLE IF NOT EXISTS public.users (
+	CREATE TABLE IF NOT EXISTS users (
 		id UUID PRIMARY KEY,
 		name VARCHAR(50) NOT NULL,
 		email VARCHAR(100) NOT NULL UNIQUE,
@@ -69,28 +69,23 @@ const (
 		version INTEGER NOT NULL DEFAULT 0
 	);
 
-	CREATE TABLE IF NOT EXISTS session (
-		session_id VARCHAR(64) PRIMARY KEY,
-		user_id UUID NOT NULL REFERENCES users(id),
-		expires_at TIMESTAMP NOT NULL
-	);
-
 	INSERT INTO schema_version (version) VALUES ($1);
 	`
 
 	getSchemaVersion    = `SELECT version FROM schema_version`
 	updateSchemaVersion = `UPDATE schema_version SET version = $1`
 
-	schema_version = 3
+	schema_version = 4
 )
 
 var migrations = []string{
 	`ALTER TABLE items ADD COLUMN date_purchased TIMESTAMP DEFAULT NULL;`,
 	`ALTER TABLE item_types ADD UNIQUE (name)`,
 	`
-		ALTER TABLE users DROP COLUMN first_name;
-		ALTER TABLE users RENAME COLUMN last_name TO name;
-		`,
+	ALTER TABLE users DROP COLUMN first_name;
+	ALTER TABLE users RENAME COLUMN last_name TO name;
+	`,
+	`DROP TABLE session`,
 }
 
 type DB struct {
