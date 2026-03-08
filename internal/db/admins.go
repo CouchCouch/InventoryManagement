@@ -5,7 +5,6 @@ import (
 
 	"inventory/internal/domain"
 
-	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -47,7 +46,6 @@ const (
 func (d *DB) MakeUserAdmin(admin domain.Admin) error {
 	userID, err := d.CreateUser(&admin.User)
 	if err != nil {
-		logrus.Error(err)
 		return err
 	}
 

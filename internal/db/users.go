@@ -7,6 +7,7 @@ import (
 	"inventory/internal/domain"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 const (
@@ -36,10 +37,7 @@ const (
 	WHERE email = $1;
 	`
 
-	createUserQuery = `
-	INSERT INTO users (id, name, email) VALUES ($1, $2, $3)
-	ON CONFLICT (email) DO UPDATE SET email = excluded.email RETURNING id;
-	`
+	createUserQuery = `INSERT INTO users (id, name, email) VALUES ($1, $2, $3)`
 )
 
 // Users retrieves all users from the database
@@ -87,7 +85,7 @@ func (d *DB) UserByEmail(email string) (*domain.User, error) {
 	err := row.Scan(&user.ID, &user.Name, &user.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("user not found")
+			return nil, domain.ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -99,6 +97,9 @@ func (d *DB) CreateUser(user *domain.User) (uuid.UUID, error) {
 	id := uuid.New()
 	err := d.DB.QueryRow(createUserQuery, id, user.Name, user.Email).Scan(&id)
 	if err != nil {
+		if (err.(*pq.Error).Code == "23505") {
+			return uuid.Nil,  domain.ErrUserAlreadyExists
+		}
 		return uuid.Nil, err
 	}
 	return id, nil

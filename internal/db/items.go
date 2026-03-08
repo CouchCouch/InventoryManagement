@@ -5,6 +5,7 @@ import (
 	"errors"
 	"regexp"
 	"strings"
+	"time"
 
 	"inventory/internal/domain"
 
@@ -50,6 +51,7 @@ const (
 	ORDER BY i.date_purchased DESC;
 	`
 
+	// id, name, notes, item_type, date_purchased
 	addItemQuery    = `INSERT into items (id, name, notes, item_type_id, date_purchased) VALUES ($1, $2, $3, $4, $5)`
 	updateItemQuery = `UPDATE items SET name = $1, notes = $2, item_type_id = $3 WHERE id = $4`
 	deleteItemQuery = `UPDATE items SET deleted = true WHERE id = $1`
@@ -147,7 +149,6 @@ func (d *DB) Item(id string) (*domain.Item, error) {
 		return nil, err
 	}
 	item := &domain.Item{}
-	log.Info("Date: ", date_purchased)
 	if date_purchased.Valid {
 		item = &domain.Item{
 			ID:            id,
@@ -229,7 +230,14 @@ func (d *DB) AddItem(item *domain.Item) error {
 	if err != nil {
 		return err
 	}
-	_, err = d.DB.Exec(addItemQuery, item.ID, item.Name, item.Notes, itemTypeID, item.DatePurchased)
+	date := sql.NullTime{}
+	if item.DatePurchased != "" {
+		date.Time, err = time.Parse("02-01-2006", item.DatePurchased)
+		if err != nil {
+			date = sql.NullTime{Valid: false}
+		}
+	}
+	_, err = d.DB.Exec(addItemQuery, item.ID, item.Name, item.Notes, itemTypeID, date)
 	if err != nil {
 		if (err.(*pq.Error).Code == "23505") {
 			return domain.ErrItemAlreadyExists

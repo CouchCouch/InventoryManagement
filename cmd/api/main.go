@@ -1,11 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"inventory/internal/auth"
 	"inventory/internal/config"
 	"inventory/internal/db"
+	"inventory/internal/domain"
 	"inventory/internal/handlers"
 
 	"github.com/gin-gonic/gin"
@@ -34,12 +36,16 @@ func main() {
 	r := gin.Default()
 	authService := auth.NewAuthService(conf.Auth.JWTSecret, conf.Auth.JWTRrefreshSecret)
 	db, err := db.NewDBWithSchema(conf.DB)
-	err = db.MakeUserAdmin(conf.Admin.GetAdmin())
-	if err != nil {
-		log.Fatal("failed to add admin", err)
-	}
 	if err != nil {
 		log.Fatal("failed to setup db ", err)
+	}
+	err = db.MakeUserAdmin(conf.Admin.GetAdmin())
+	if err != nil {
+		if errors.Is(err, domain.ErrUserAlreadyExists) {
+			log.Info("Skipped adding user, user already exists")
+		} else {
+			log.Fatal("failed to add admin ", err)
+		}
 	}
 	handlers.Handle(r, db, authService)
 	r.Run(conf.API.Addr())

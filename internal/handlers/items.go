@@ -23,6 +23,10 @@ func (s *APIHandler) GetItemsHandler(c *gin.Context) {
 		items, err = s.db.Items()
 	}
 	if err != nil {
+		if errors.Is(err, domain.ErrItemNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -37,10 +41,12 @@ func (s *APIHandler) AddItemHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if _, err := time.Parse("02-01-2006", item.DatePurchased); err != nil {
-		log.Error(err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+	if item.DatePurchased != "" {
+		if _, err := time.Parse("02-01-2006", item.DatePurchased); err != nil {
+			log.Error(err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 	}
 	err = s.db.AddItem(&item)
 	if err != nil {
@@ -48,10 +54,11 @@ func (s *APIHandler) AddItemHandler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		log.Error("Failed to add item, Error: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	c.JSON(http.StatusOK, "item added successfully")
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 func (s *APIHandler) DeleteItemHandler(c *gin.Context) {
@@ -69,4 +76,23 @@ func (s *APIHandler) DeleteItemHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{})
+}
+
+func (s *APIHandler) GetItemsStatusHandler(c *gin.Context) {
+	id := c.Query("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing ids"})
+		return
+	}
+	ids := strings.Split(id, ",")
+	statuses, err := s.db.ItemsStatus(ids)
+	if err != nil {
+		if errors.Is(err, domain.ErrInvalidItemID) {
+			c.JSON(http.StatusMultiStatus, statuses)
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+	c.JSON(http.StatusOK, statuses)
 }

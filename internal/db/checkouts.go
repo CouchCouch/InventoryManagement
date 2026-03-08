@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
 	"inventory/internal/domain"
@@ -15,13 +16,15 @@ const (
 		c.id,
 		c.checkout_date,
 		c.notes,
-		u.id as user_id,
 		u.name,
 		u.email,
-		c.created_by
+		c.created_by,
+		a.name,
+		a.email
 	FROM checkouts c
 	JOIN users u ON c.user_id = u.id
-	ORDER BY c.id DESC;
+	JOIN users a ON c.user_id = a.id
+	ORDER BY c.checkout_date DESC;
 	`
 
 	getCheckoutByIDQuery = `
@@ -50,6 +53,12 @@ const (
 	updateCheckoutQuery = `UPDATE checkouts SET notes = $1 WHERE id = $2;`
 
 	returnItemQuery = `UPDATE checkout_items SET return_date = CURRENT_TIMESTAMP WHERE checkout_id = $1 AND item_id = $2 AND return_date IS NULL;`
+
+	getItemStatusQuery = `
+	SELECT returned FROM checkout_items
+	ci JOIN eheckouts c ON c.id = ci.checkout_id
+	WHERE item_id = $1 ORDER BY c.checkout_date DESC LIMIT 1
+	`
 )
 
 func (d *DB) Checkouts() (*[]domain.Checkout, error) {
@@ -59,55 +68,39 @@ func (d *DB) Checkouts() (*[]domain.Checkout, error) {
 	}
 	defer rows.Close()
 
-	checkoutsMap := make(map[int]*domain.Checkout)
+	checkouts := []domain.Checkout{}
 	for rows.Next() {
 		var checkoutID int
 		var checkoutDate time.Time
 		var checkoutNotes sql.NullString
-		var userID uuid.UUID
 		var userName, userEmail string
-		var createdBy int
-		var itemID, itemName, itemType sql.NullString
-		var returnDate sql.NullTime
+		var createdByName, createdByEmail string
 
 		err := rows.Scan(
 			&checkoutID,
 			&checkoutDate,
 			&checkoutNotes,
-			&userID,
 			&userName,
 			&userEmail,
-			&createdBy,
-			&itemID,
-			&itemName,
-			&itemType,
-			&returnDate,
+			&createdByName,
+			&createdByEmail,
 		)
 		if err != nil {
 			return nil, err
 		}
-
-		checkout, exists := checkoutsMap[checkoutID]
-		if !exists {
-			checkout = &domain.Checkout{
-				ID:           checkoutID,
-				CheckoutDate: checkoutDate,
-				Notes:        checkoutNotes.String,
-				CreatedBy:    createdBy,
-				User: domain.User{
-					ID:    userID,
-					Name:  userName,
-					Email: userEmail,
-				},
-				Items: []domain.CheckoutItem{},
-			}
-			checkoutsMap[checkoutID] = checkout
-		}
-	}
-
-	checkouts := make([]domain.Checkout, 0, len(checkoutsMap))
-	for _, checkout := range checkoutsMap {
-		checkouts = append(checkouts, *checkout)
+		checkouts = append(checkouts, domain.Checkout{
+			ID: checkoutID,
+			User: domain.User{
+				Name: userName,
+				Email: userEmail,
+			},
+			CreatedBy: domain.User{
+				Name: createdByName,
+				Email: createdByEmail,
+			},
+			Notes: checkoutNotes.String,
+			CheckoutDate: checkoutDate,
+		})
 	}
 
 	return &checkouts, nil
@@ -127,7 +120,7 @@ func (d *DB) Checkout(id int) (*domain.Checkout, error) {
 		var checkoutNotes sql.NullString
 		var userID uuid.UUID
 		var userName, userEmail string
-		var createdBy int
+		var createdBy uuid.UUID
 		var itemID, itemName, itemType sql.NullString
 		var returnDate sql.NullTime
 
@@ -153,7 +146,6 @@ func (d *DB) Checkout(id int) (*domain.Checkout, error) {
 				ID:           checkoutID,
 				CheckoutDate: checkoutDate,
 				Notes:        checkoutNotes.String,
-				CreatedBy:    createdBy,
 				User: domain.User{
 					ID:    userID,
 					Name:  userName,
@@ -228,4 +220,43 @@ func (d *DB) ReturnItem(checkoutID int, itemID string) error {
 		return sql.ErrNoRows // Or a custom error like "item already returned or not found"
 	}
 	return nil
+}
+
+
+func (d *DB) ItemsStatus(ids []string) (*[]domain.ItemStatusResponse, error) {
+	tx, err := d.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	invalid_id := false
+	statuses := make([]domain.ItemStatusResponse, 0, len(ids))
+
+	for _, id := range(ids) {
+		var status bool
+		row := tx.QueryRow(getItemStatusQuery, id)
+		err = row.Scan(&status)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				invalid_id = true
+			} else {
+				tx.Rollback()
+				return nil, err
+			}
+		} else {
+			statuses = append(statuses, domain.ItemStatusResponse{
+				ID: id,
+				CheckedOut: status,
+			})
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+	if invalid_id {
+		return &statuses, domain.ErrInvalidItemID
+	}
+	return &statuses, nil
 }

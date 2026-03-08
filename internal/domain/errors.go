@@ -15,6 +15,10 @@ const (
 	ErrCodeWrongSchema = "wrong_schema"
 	// ErrCodeWrongPassword is returned when the login password is wrong
 	ErrCodeWrongPassword = "wrong_password"
+	// ErrCodeUserNotFound is returned when a user is not found in the database.
+	ErrCodeUserNotFound = "user_not_found"
+	// ErrCodeUserAlreadyExists is returned when a user already exists in the database.
+	ErrCodeUserAlreadyExists = "user_already_exists"
 )
 
 var (
@@ -24,4 +28,6 @@ var (
 	ErrInvalidItemType   = errors.New(ErrCodeInvalidItemType)
 	ErrWrongSchema       = errors.New(ErrCodeWrongSchema)
 	ErrWrongPassword     = errors.New(ErrCodeWrongPassword)
+	ErrUserNotFound      = errors.New(ErrCodeUserNotFound)
+	ErrUserAlreadyExists = errors.New(ErrCodeUserAlreadyExists)
 )

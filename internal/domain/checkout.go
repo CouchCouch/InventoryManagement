@@ -1,13 +1,15 @@
 package domain
 
-import "time"
+import (
+	"time"
+)
 
 type Checkout struct {
 	ID           int
 	User         User           `json:"user"`
 	Items        []CheckoutItem `json:"items"`
 	CheckoutDate time.Time      `json:"checkout_date"`
-	CreatedBy    int            `json:"created_by"`
+	CreatedBy    User           `json:"created_by"`
 	Notes        string         `json:"notes,omitempty"`
 }
 
