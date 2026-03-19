@@ -27,24 +27,25 @@ const inventoryAPIText = `
 
 func main() {
 	fmt.Println(inventoryAPIText)
+	log.SetReportCaller(true)
+	log.SetLevel(log.DebugLevel)
 	conf, err := config.GetConfig()
 	if err != nil {
 		log.Fatal("failed to load config", err)
 	}
-	log.SetReportCaller(true)
-	log.SetLevel(log.DebugLevel)
 	r := gin.Default()
 	authService := auth.NewAuthService(conf.Auth.JWTSecret, conf.Auth.JWTRrefreshSecret)
 	db, err := db.NewDBWithSchema(conf.DB)
 	if err != nil {
 		log.Fatal("failed to setup db ", err)
+		log.WithField("err", err).Fatal("failed to setup db")
 	}
 	err = db.MakeUserAdmin(conf.Admin.GetAdmin())
 	if err != nil {
 		if errors.Is(err, domain.ErrUserAlreadyExists) {
 			log.Info("Skipped adding user, user already exists")
 		} else {
-			log.Fatal("failed to add admin ", err)
+			log.WithField("err", err).Fatal("failed to add admin")
 		}
 	}
 	handlers.Handle(r, db, authService)

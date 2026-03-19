@@ -1,3 +1,4 @@
+// Package handlers contains the API handlers for the inventory management system. It defines the routes and their corresponding handler functions, as well as middleware for authentication and CORS handling. The API endpoints allow clients to interact with the inventory system, including managing items, checkouts, and user authentication.
 package handlers
 
 import (
@@ -12,6 +13,44 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
+const htmlResponse string = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8d7da;
+            color: #721c24;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 {
+            font-size: 36px;
+        }
+        p {
+            font-size: 20px;
+        }
+        a {
+            color: #0056b3;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Oops! Something went wrong.</h1>
+    <p>We're sorry, but an error has occurred while processing your request.</p>
+    <p>Please try again later or <a href="/">return to the homepage</a>.</p>
+</body>
+</html>
+`
+
 
 type APIHandler struct {
 	db   *db.DB
@@ -52,10 +91,17 @@ func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService) {
 		if !strings.HasPrefix(c.Request.URL.Path, "/api") {
 			index, err := static.LocalFile("./web/dist", true).Open("index.html")
 			if err != nil {
-				log.Error(err)
+				log.WithField("err", err).Error("Error Loading File")
+				c.HTML(500, htmlResponse, gin.H{})
+				return
 			}
 			defer index.Close()
-			stat, _ := index.Stat()
+			stat, err := index.Stat()
+			if err != nil {
+				log.WithField("err", err).Error("Error getting file info")
+				c.HTML(500, htmlResponse, gin.H{})
+				return
+			}
 			http.ServeContent(c.Writer, c.Request, "index.html", stat.ModTime(), index)
 		}
 	})

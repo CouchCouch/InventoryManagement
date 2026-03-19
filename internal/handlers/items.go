@@ -37,13 +37,13 @@ func (s *APIHandler) AddItemHandler(c *gin.Context) {
 	item := domain.Item{}
 	err := c.ShouldBindJSON(&item)
 	if err != nil {
-		log.Error(err)
+		log.WithField("err", err).Error("Failed to deserialize json")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	if item.DatePurchased != "" {
 		if _, err := time.Parse("02-01-2006", item.DatePurchased); err != nil {
-			log.Error(err)
+			log.WithField("err", err).Error("Failed to parse time")
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -54,7 +54,7 @@ func (s *APIHandler) AddItemHandler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		log.Error("Failed to add item, Error: ", err)
+		log.WithField("err", err).Error("Failed to add item")
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}

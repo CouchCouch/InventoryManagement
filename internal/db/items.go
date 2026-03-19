@@ -10,7 +10,6 @@ import (
 	"inventory/internal/domain"
 
 	"github.com/lib/pq"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -115,7 +114,6 @@ func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
 		if err != nil {
 			return nil, err
 		}
-		log.Info("Date: ", date_purchased)
 		if date_purchased.Valid {
 			items = append(items, domain.Item{
 				ID:            id,

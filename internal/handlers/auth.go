@@ -29,7 +29,7 @@ func (s *APIHandler) LoginHandler(c *gin.Context) {
 	tokenString, err := s.auth.GenerateJWT(admin.User.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{})
-		log.Error("Error generating JWT: ", err)
+		log.WithField("err", err).Error("Error generating JWT")
 		return
 	}
 	c.Header("Authorization", "Bearer "+tokenString)

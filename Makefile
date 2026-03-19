@@ -2,7 +2,7 @@ build: build-web
 	go build -o bin/app main.go
 
 build-web:
-	cd web && pnpm run build
+	cd web && bun i && bun --bun vite build
 
 format:
 	gofumpt -w .

@@ -34,13 +34,13 @@ func (s *APIHandler) CreateCheckoutHandler(c *gin.Context) {
 	checkout := domain.Checkout{}
 	err := c.ShouldBindJSON(&checkout)
 	if err != nil {
-		log.Error(err)
+		log.WithField("err", err).Error("Failed to deserialize json")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	err = s.db.CreateCheckout(&checkout)
 	if err != nil {
-		log.Error(err)
+		log.WithField("err", err).Error("Failed to create checkout")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
