@@ -1,9 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 :root {
-  font-family: "Helvetica Neue", "Helvetica", "Roboto", "Arial", sans‑serif;
+  font-family: "Noto Sans", "Helvetica", "Roboto", "Arial", sans‑serif;
   font-weight: 400;
 
   color: rgba(255, 255, 255, 0.87);
@@ -169,7 +170,7 @@
 }
 
 body {
-  @apply m-0 flex items-center w-screen h-screen bg-popover
+  @apply m-0 flex items-center w-screen h-screen bg-background
 }
 
 header {
@@ -180,3 +181,6 @@ h1 {
   @apply text-5xl leading-[1]
 }
 
+h2 {
+  @apply text-3xl leading-[1] text-foreground/70
+}

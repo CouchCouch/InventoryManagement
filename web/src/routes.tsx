@@ -4,6 +4,8 @@ import { House } from 'lucide-react'
 import dragonbeaver from './assets/dragon-beaver.png'
 import { Root } from "./pages/root";
 import Items from "./pages/Items";
+import Login from "./pages/Login";
+import Index from "./pages/Index";
 
 
 const rootRoute = createRootRouteWithContext<{
@@ -30,11 +32,7 @@ const rootRoute = createRootRouteWithContext<{
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: function Index() {
-    return (
-      <h1>Index</h1>
-    )
-  }
+  component: Index
 })
 
 const itemsRoute = createRoute({
@@ -43,4 +41,10 @@ const itemsRoute = createRoute({
   component: Items
 })
 
-export const routeTree = rootRoute.addChildren([indexRoute, itemsRoute])
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  component: Login
+})
+
+export const routeTree = rootRoute.addChildren([indexRoute, itemsRoute, loginRoute])

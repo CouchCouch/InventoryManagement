@@ -13,8 +13,8 @@ export default function Login() {
 
   return (
     <>
-      <form onSubmit={() => handleSubmit()}>
-        <FieldGroup>
+      <form onSubmit={() => handleSubmit()} className="m-2">
+        <FieldGroup className="w-1/2">
           <Field>
             <FieldLabel htmlFor="email-input">Email</FieldLabel>
             <Input
