@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"log/slog"
 
 	"inventory/internal/domain"
 
@@ -94,13 +95,19 @@ func (d *DB) UserByEmail(email string) (*domain.User, error) {
 
 // CreateUser creates a new user in the database, is there is already a user with the given email, the user id is returned
 func (d *DB) CreateUser(user *domain.User) (uuid.UUID, error) {
+	slog.Info("Creating user", "email", user.Email, "name", user.Name)
+	
 	id := uuid.New()
 	err := d.DB.QueryRow(createUserQuery, id, user.Name, user.Email).Scan(&id)
 	if err != nil {
 		if (err.(*pq.Error).Code == "23505") {
-			return uuid.Nil,  domain.ErrUserAlreadyExists
+			slog.Warn("User already exists", "email", user.Email)
+			return uuid.Nil, domain.ErrUserAlreadyExists
 		}
+		slog.Error("Failed to create user", "error", err, "email", user.Email)
 		return uuid.Nil, err
 	}
+	
+	slog.Info("User created successfully", "user_id", id, "email", user.Email)
 	return id, nil
 }

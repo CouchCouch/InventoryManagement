@@ -14,7 +14,7 @@ export default function Login() {
   return (
     <>
       <form onSubmit={() => handleSubmit()} className="m-2">
-        <FieldGroup className="w-1/2">
+        <FieldGroup className="w-1/2 m-auto">
           <Field>
             <FieldLabel htmlFor="email-input">Email</FieldLabel>
             <Input

@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"log/slog"
 	"time"
 
 	"inventory/internal/domain"
@@ -62,8 +63,11 @@ const (
 )
 
 func (d *DB) Checkouts() (*[]domain.Checkout, error) {
+	slog.Debug("Querying all checkouts")
+	start := time.Now()
 	rows, err := d.DB.Query(getCheckoutsQuery)
 	if err != nil {
+		slog.Error("Failed to query checkouts", "error", err, "duration_ms", time.Since(start).Milliseconds())
 		return nil, err
 	}
 	defer rows.Close()
@@ -102,7 +106,8 @@ func (d *DB) Checkouts() (*[]domain.Checkout, error) {
 			CheckoutDate: checkoutDate,
 		})
 	}
-
+	
+	slog.Debug("Checkouts query completed", "count", len(checkouts), "duration_ms", time.Since(start).Milliseconds())
 	return &checkouts, nil
 }
 
@@ -180,8 +185,12 @@ func (d *DB) Checkout(id int) (*domain.Checkout, error) {
 }
 
 func (d *DB) CreateCheckout(checkout *domain.Checkout) error {
+	slog.Info("Creating checkout", "user_id", checkout.User.ID, "created_by", checkout.CreatedBy, "item_count", len(checkout.Items))
+	start := time.Now()
+	
 	tx, err := d.DB.Begin()
 	if err != nil {
+		slog.Error("Failed to begin transaction", "error", err)
 		return err
 	}
 
@@ -189,17 +198,25 @@ func (d *DB) CreateCheckout(checkout *domain.Checkout) error {
 	err = tx.QueryRow(createCheckoutQuery, checkout.User.ID, checkout.Notes, checkout.CreatedBy).Scan(&checkoutID)
 	if err != nil {
 		tx.Rollback()
+		slog.Error("Failed to create checkout", "error", err, "user_id", checkout.User.ID)
 		return err
 	}
 
 	for _, checkoutItem := range checkout.Items {
 		if _, err := tx.Exec(addCheckoutItemQuery, checkoutID, checkoutItem.Item.ID); err != nil {
 			tx.Rollback()
+			slog.Error("Failed to add checkout item", "error", err, "checkout_id", checkoutID, "item_id", checkoutItem.Item.ID)
 			return err
 		}
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		slog.Error("Failed to commit checkout transaction", "error", err, "checkout_id", checkoutID)
+		return err
+	}
+	
+	slog.Info("Checkout created successfully", "checkout_id", checkoutID, "duration_ms", time.Since(start).Milliseconds())
+	return nil
 }
 
 func (d *DB) UpdateCheckout(checkout *domain.Checkout) error {

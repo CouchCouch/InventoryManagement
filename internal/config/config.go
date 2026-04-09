@@ -40,10 +40,11 @@ type AuthConfig struct {
 }
 
 type Config struct {
-	API   APIConfig   `yaml:"api"`
-	DB    PGConfig    `yaml:"postgres"`
-	Admin AdminConfig `yaml:"admin"`
-	Auth  AuthConfig  `yaml:"auth"`
+	API      APIConfig   `yaml:"api"`
+	DB       PGConfig    `yaml:"postgres"`
+	Admin    AdminConfig `yaml:"admin"`
+	Auth     AuthConfig  `yaml:"auth"`
+	LogLevel string      `yaml:"log_level"`
 }
 
 func GetConfig() (*Config, error) {

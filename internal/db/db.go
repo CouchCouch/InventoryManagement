@@ -2,11 +2,11 @@ package db
 
 import (
 	"database/sql"
+	"log/slog"
 
 	"inventory/internal/config"
 
 	_ "github.com/lib/pq"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -117,7 +117,7 @@ func runMigrations(db *sql.DB, start int) (*DB, error) {
 }
 
 func NewDBWithSchema(conf config.PGConfig) (*DB, error) {
-	log.Info("Connecting to database")
+	slog.Info("Connecting to database", "host", conf.Host, "port", conf.Port, "database", conf.Database)
 	postgresDB, err := sql.Open("postgres", conf.ConnStr())
 	if err != nil {
 		return nil, err
@@ -128,11 +128,15 @@ func NewDBWithSchema(conf config.PGConfig) (*DB, error) {
 	if row.Err() == nil {
 		row.Scan(&version)
 		if version == schema_version {
+			slog.Info("Database schema up to date", "version", version)
 			return &DB{DB: postgresDB}, nil
 		} else {
+			slog.Info("Running database migrations", "from_version", version, "to_version", schema_version)
 			return runMigrations(postgresDB, version)
 		}
 	}
+	
+	slog.Info("Creating database schema", "version", schema_version)
 	_, err = postgresDB.Exec(databaseSchema, schema_version)
 	if err != nil {
 		return nil, err

@@ -1,12 +1,12 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 
 	"inventory/internal/domain"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 func (s *APIHandler) GetCheckoutsHandler(c *gin.Context) {
@@ -34,13 +34,13 @@ func (s *APIHandler) CreateCheckoutHandler(c *gin.Context) {
 	checkout := domain.Checkout{}
 	err := c.ShouldBindJSON(&checkout)
 	if err != nil {
-		log.WithField("err", err).Error("Failed to deserialize json")
+		slog.Error("Failed to deserialize json", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	err = s.db.CreateCheckout(&checkout)
 	if err != nil {
-		log.WithField("err", err).Error("Failed to create checkout")
+		slog.Error("Failed to create checkout", "error", err, "user_id", checkout.User.ID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

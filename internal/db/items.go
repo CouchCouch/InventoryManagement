@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"log/slog"
 	"regexp"
 	"strings"
 	"time"
@@ -217,6 +218,8 @@ func (d *DB) addItemType(itemType string) (int, error) {
 }
 
 func (d *DB) AddItem(item *domain.Item) error {
+	slog.Debug("Adding item", "item_id", item.ID, "name", item.Name, "type", item.Type)
+	
 	if !validateItemID(item.ID) {
 		return errors.New(domain.ErrCodeInvalidItemID)
 	}
@@ -226,6 +229,7 @@ func (d *DB) AddItem(item *domain.Item) error {
 	// Assuming item type ID is fetched from the database or passed in some way
 	itemTypeID, err := d.addItemType(item.Type)
 	if err != nil {
+		slog.Error("Failed to add/get item type", "error", err, "type", item.Type)
 		return err
 	}
 	date := sql.NullTime{}
@@ -238,10 +242,15 @@ func (d *DB) AddItem(item *domain.Item) error {
 	_, err = d.DB.Exec(addItemQuery, item.ID, item.Name, item.Notes, itemTypeID, date)
 	if err != nil {
 		if (err.(*pq.Error).Code == "23505") {
+			slog.Warn("Item already exists", "item_id", item.ID)
 			return domain.ErrItemAlreadyExists
 		}
+		slog.Error("Failed to add item", "error", err, "item_id", item.ID)
+		return err
 	}
-	return err
+	
+	slog.Info("Item added successfully", "item_id", item.ID, "name", item.Name)
+	return nil
 }
 
 func (d *DB) UpdateItem(item *domain.Item) error {

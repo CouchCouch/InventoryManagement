@@ -47,4 +47,10 @@ const loginRoute = createRoute({
   component: Login
 })
 
-export const routeTree = rootRoute.addChildren([indexRoute, itemsRoute, loginRoute])
+const checkoutsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/checkouts',
+  component: () => <div>Checkouts</div>
+})
+
+export const routeTree = rootRoute.addChildren([indexRoute, itemsRoute, loginRoute, checkoutsRoute])

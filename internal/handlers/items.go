@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"inventory/internal/domain"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 func (s *APIHandler) GetItemsHandler(c *gin.Context) {
@@ -37,13 +37,13 @@ func (s *APIHandler) AddItemHandler(c *gin.Context) {
 	item := domain.Item{}
 	err := c.ShouldBindJSON(&item)
 	if err != nil {
-		log.WithField("err", err).Error("Failed to deserialize json")
+		slog.Error("Failed to deserialize json", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	if item.DatePurchased != "" {
 		if _, err := time.Parse("02-01-2006", item.DatePurchased); err != nil {
-			log.WithField("err", err).Error("Failed to parse time")
+			slog.Error("Failed to parse time", "error", err, "date", item.DatePurchased)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -54,7 +54,7 @@ func (s *APIHandler) AddItemHandler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		log.WithField("err", err).Error("Failed to add item")
+		slog.Error("Failed to add item", "error", err, "item_id", item.ID)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}

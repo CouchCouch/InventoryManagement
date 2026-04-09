@@ -3,15 +3,17 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
 
 	"inventory/internal/auth"
 	"inventory/internal/config"
 	"inventory/internal/db"
 	"inventory/internal/domain"
 	"inventory/internal/handlers"
+	"inventory/internal/logger"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 const inventoryAPIText = `
@@ -27,30 +29,45 @@ const inventoryAPIText = `
 
 func main() {
 	fmt.Println(inventoryAPIText)
-	log.SetReportCaller(true)
-	log.SetLevel(log.DebugLevel)
+	
+	// Load config first to get log level
 	conf, err := config.GetConfig()
 	if err != nil {
-		log.Fatal("failed to load config", err)
+		slog.Error("failed to load config", "error", err)
+		os.Exit(1)
 	}
+	
+	// Initialize logger with config settings
+	isDev := logger.DetectEnvironment()
+	log := logger.Initialize(conf.LogLevel, isDev)
+	slog.SetDefault(log)
+	
+	slog.Info("Starting Inventory API", "environment", map[bool]string{true: "development", false: "production"}[isDev])
+	
 	r := gin.Default()
 	authService := auth.NewAuthService(conf.Auth.JWTSecret, conf.Auth.JWTRrefreshSecret)
-	db, err := db.NewDBWithSchema(conf.DB)
+	database, err := db.NewDBWithSchema(conf.DB)
 	if err != nil {
-		log.Fatal("failed to setup db ", err)
-		log.WithField("err", err).Fatal("failed to setup db")
+		slog.Error("failed to setup database", "error", err)
+		os.Exit(1)
 	}
-	err = db.MakeUserAdmin(conf.Admin.GetAdmin())
+	
+	err = database.MakeUserAdmin(conf.Admin.GetAdmin())
 	if err != nil {
 		if errors.Is(err, domain.ErrUserAlreadyExists) {
-			log.Info("Skipped adding user, user already exists")
+			slog.Info("Skipped adding user, user already exists")
 		} else {
-			log.WithField("err", err).Fatal("failed to add admin")
+			slog.Error("failed to add admin", "error", err)
+			os.Exit(1)
 		}
 	}
-	handlers.Handle(r, db, authService)
-	r.Run(conf.API.Addr())
+	
+	handlers.Handle(r, database, authService)
+	
+	slog.Info("Server starting", "address", conf.API.Addr())
+	err = r.Run(conf.API.Addr())
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("server failed", "error", err)
+		os.Exit(1)
 	}
 }
