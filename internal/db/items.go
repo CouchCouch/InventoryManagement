@@ -90,10 +90,10 @@ func (d *DB) Items() (*[]domain.Item, error) {
 			})
 		} else {
 			items = append(items, domain.Item{
-				ID:            id,
-				Name:          name,
-				Type:          item_type,
-				Notes:         notes,
+				ID:    id,
+				Name:  name,
+				Type:  item_type,
+				Notes: notes,
 			})
 		}
 	}
@@ -125,10 +125,10 @@ func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
 			})
 		} else {
 			items = append(items, domain.Item{
-				ID:            id,
-				Name:          name,
-				Type:          item_type,
-				Notes:         notes,
+				ID:    id,
+				Name:  name,
+				Type:  item_type,
+				Notes: notes,
 			})
 		}
 	}
@@ -158,10 +158,10 @@ func (d *DB) Item(id string) (*domain.Item, error) {
 		}
 	} else {
 		item = &domain.Item{
-			ID:            id,
-			Name:          name,
-			Type:          item_type,
-			Notes:         notes,
+			ID:    id,
+			Name:  name,
+			Type:  item_type,
+			Notes: notes,
 		}
 	}
 
@@ -219,7 +219,7 @@ func (d *DB) addItemType(itemType string) (int, error) {
 
 func (d *DB) AddItem(item *domain.Item) error {
 	slog.Debug("Adding item", "item_id", item.ID, "name", item.Name, "type", item.Type)
-	
+
 	if !validateItemID(item.ID) {
 		return errors.New(domain.ErrCodeInvalidItemID)
 	}
@@ -241,14 +241,14 @@ func (d *DB) AddItem(item *domain.Item) error {
 	}
 	_, err = d.DB.Exec(addItemQuery, item.ID, item.Name, item.Notes, itemTypeID, date)
 	if err != nil {
-		if (err.(*pq.Error).Code == "23505") {
+		if err.(*pq.Error).Code == "23505" {
 			slog.Warn("Item already exists", "item_id", item.ID)
 			return domain.ErrItemAlreadyExists
 		}
 		slog.Error("Failed to add item", "error", err, "item_id", item.ID)
 		return err
 	}
-	
+
 	slog.Info("Item added successfully", "item_id", item.ID, "name", item.Name)
 	return nil
 }

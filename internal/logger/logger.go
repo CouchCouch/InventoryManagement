@@ -48,18 +48,3 @@ func Initialize(logLevel string, isDevelopment bool) *slog.Logger {
 	handler := NewZerologHandler(zerologLogger)
 	return slog.New(handler)
 }
-
-func DetectEnvironment() bool {
-	env := os.Getenv("ENV")
-	if env == "" {
-		env = os.Getenv("ENVIRONMENT")
-	}
-	
-	// Default to development if not specified
-	if env == "" {
-		return true
-	}
-	
-	env = strings.ToLower(env)
-	return env == "dev" || env == "development" || env == "local"
-}

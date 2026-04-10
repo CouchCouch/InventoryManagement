@@ -6,13 +6,14 @@ export const login = async(email: string, password: string): Promise<string> => 
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ user: { email: email }, password: password }),
+      body: JSON.stringify({ email: email , password: password }),
+      credentials: 'include',
     }
   );
   if (!response.ok) {
     throw new Error('Network response was not ok');
   }
-  return await response.json() as Promise<string>;
+  return 'success'
 }
 
 export const loginQueryOptions = {

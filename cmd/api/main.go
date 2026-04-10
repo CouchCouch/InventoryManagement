@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"inventory/internal/auth"
 	"inventory/internal/config"
@@ -13,6 +14,7 @@ import (
 	"inventory/internal/handlers"
 	"inventory/internal/logger"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,29 +31,40 @@ const inventoryAPIText = `
 
 func main() {
 	fmt.Println(inventoryAPIText)
-	
+
 	// Load config first to get log level
 	conf, err := config.GetConfig()
 	if err != nil {
 		slog.Error("failed to load config", "error", err)
 		os.Exit(1)
 	}
-	
+
 	// Initialize logger with config settings
-	isDev := logger.DetectEnvironment()
+	isDev := conf.Mode == "dev"
 	log := logger.Initialize(conf.LogLevel, isDev)
 	slog.SetDefault(log)
-	
+
 	slog.Info("Starting Inventory API", "environment", map[bool]string{true: "development", false: "production"}[isDev])
-	
+
 	r := gin.Default()
+	corsConfig := cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+
+		AllowCredentials: true,
+
+		MaxAge:           12 * time.Hour,
+	}
+	r.Use(cors.New(corsConfig))
+
 	authService := auth.NewAuthService(conf.Auth.JWTSecret, conf.Auth.JWTRrefreshSecret)
 	database, err := db.NewDBWithSchema(conf.DB)
 	if err != nil {
 		slog.Error("failed to setup database", "error", err)
 		os.Exit(1)
 	}
-	
+
 	err = database.MakeUserAdmin(conf.Admin.GetAdmin())
 	if err != nil {
 		if errors.Is(err, domain.ErrUserAlreadyExists) {
@@ -61,9 +74,9 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	
+
 	handlers.Handle(r, database, authService)
-	
+
 	slog.Info("Server starting", "address", conf.API.Addr())
 	err = r.Run(conf.API.Addr())
 	if err != nil {

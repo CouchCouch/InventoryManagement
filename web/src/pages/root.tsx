@@ -4,6 +4,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ModeToggle } from "@/components/mode-toggle"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import UserInfo from "@/components/user"
 
 export const Root = () => {
   return (
@@ -14,9 +15,12 @@ export const Root = () => {
           <div className="absolute left-2" >
             <ModeToggle />
           </div>
+          <div className="absolute right-2" >
+            <UserInfo />
+          </div>
         </header>
         <Outlet />
-        <ReactQueryDevtools buttonPosition="top-right" />
+        <ReactQueryDevtools buttonPosition="bottom-right" />
         <TanStackRouterDevtools position="bottom-right" />
       </ThemeProvider>
     </TooltipProvider>

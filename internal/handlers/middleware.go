@@ -3,7 +3,6 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
-	"strings"
 	"time"
 
 	"inventory/internal/domain"
@@ -15,16 +14,15 @@ import (
 
 func (s *APIHandler) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
+		tokenString, err := c.Cookie("token")
+		if err != nil {
+			slog.Warn("Unauthorized access attempt - missing token", "ip", c.ClientIP(), "path", c.Request.URL.Path)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing token"})
 			c.Abort()
 			return
 		}
 
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-
-		token, _ := jwt.ParseWithClaims(tokenStr, &domain.Claims{}, func(token *jwt.Token) (any, error) {
+		token, _ := jwt.ParseWithClaims(tokenString, &domain.Claims{}, func(token *jwt.Token) (any, error) {
 			return []byte(s.auth.JWTSecret), nil
 		})
 

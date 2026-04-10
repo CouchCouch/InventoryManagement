@@ -135,7 +135,7 @@ func NewDBWithSchema(conf config.PGConfig) (*DB, error) {
 			return runMigrations(postgresDB, version)
 		}
 	}
-	
+
 	slog.Info("Creating database schema", "version", schema_version)
 	_, err = postgresDB.Exec(databaseSchema, schema_version)
 	if err != nil {

@@ -83,8 +83,7 @@ func (d *DB) UserByEmail(email string) (*domain.User, error) {
 	row := d.DB.QueryRow(getUserByEmailQuery, email)
 
 	var user domain.User
-	err := row.Scan(&user.ID, &user.Name, &user.Email)
-	if err != nil {
+	if err := row.Scan(&user.ID, &user.Name, &user.Email); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrUserNotFound
 		}
@@ -96,18 +95,18 @@ func (d *DB) UserByEmail(email string) (*domain.User, error) {
 // CreateUser creates a new user in the database, is there is already a user with the given email, the user id is returned
 func (d *DB) CreateUser(user *domain.User) (uuid.UUID, error) {
 	slog.Info("Creating user", "email", user.Email, "name", user.Name)
-	
+
 	id := uuid.New()
 	err := d.DB.QueryRow(createUserQuery, id, user.Name, user.Email).Scan(&id)
 	if err != nil {
-		if (err.(*pq.Error).Code == "23505") {
+		if err.(*pq.Error).Code == "23505" {
 			slog.Warn("User already exists", "email", user.Email)
 			return uuid.Nil, domain.ErrUserAlreadyExists
 		}
 		slog.Error("Failed to create user", "error", err, "email", user.Email)
 		return uuid.Nil, err
 	}
-	
+
 	slog.Info("User created successfully", "user_id", id, "email", user.Email)
 	return id, nil
 }

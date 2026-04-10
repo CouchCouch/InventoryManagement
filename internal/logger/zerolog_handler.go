@@ -40,7 +40,7 @@ func (h *ZerologHandler) Enabled(ctx context.Context, level slog.Level) bool {
 
 func (h *ZerologHandler) Handle(ctx context.Context, record slog.Record) error {
 	var event *zerolog.Event
-	
+
 	switch record.Level {
 	case slog.LevelDebug:
 		event = h.logger.Debug()
@@ -107,7 +107,7 @@ func (h *ZerologHandler) addAttr(event *zerolog.Event, attr slog.Attr, groups []
 	}
 
 	value := attr.Value.Any()
-	
+
 	switch v := value.(type) {
 	case string:
 		event.Str(key, v)

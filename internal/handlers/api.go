@@ -8,7 +8,6 @@ import (
 	"inventory/internal/auth"
 	"inventory/internal/db"
 
-	"github.com/gin-gonic/contrib/cors"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 )
@@ -57,9 +56,8 @@ type APIHandler struct {
 }
 
 func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService) {
-	r.Use(cors.Default())
-	r.Use(RequestLoggingMiddleware())
-	
+	//r.Use(RequestLoggingMiddleware())
+
 	APIHandlerInstance := &APIHandler{db: db, auth: auth}
 	api := r.Group("/api")
 	{
@@ -85,6 +83,7 @@ func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService) {
 		{
 			userAPI.GET("", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.GetUserHandler)
 			userAPI.POST("", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.CreateUserHandler)
+			userAPI.GET("/me", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.GetMeHandler)
 		}
 	}
 	r.Use(static.Serve("/", static.LocalFile("./web/dist", true)))

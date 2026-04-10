@@ -1,9 +1,8 @@
 package auth
 
 import (
-	"time"
-
 	"inventory/internal/domain"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )

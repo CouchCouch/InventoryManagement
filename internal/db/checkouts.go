@@ -95,18 +95,18 @@ func (d *DB) Checkouts() (*[]domain.Checkout, error) {
 		checkouts = append(checkouts, domain.Checkout{
 			ID: checkoutID,
 			User: domain.User{
-				Name: userName,
+				Name:  userName,
 				Email: userEmail,
 			},
 			CreatedBy: domain.User{
-				Name: createdByName,
+				Name:  createdByName,
 				Email: createdByEmail,
 			},
-			Notes: checkoutNotes.String,
+			Notes:        checkoutNotes.String,
 			CheckoutDate: checkoutDate,
 		})
 	}
-	
+
 	slog.Debug("Checkouts query completed", "count", len(checkouts), "duration_ms", time.Since(start).Milliseconds())
 	return &checkouts, nil
 }
@@ -187,7 +187,7 @@ func (d *DB) Checkout(id int) (*domain.Checkout, error) {
 func (d *DB) CreateCheckout(checkout *domain.Checkout) error {
 	slog.Info("Creating checkout", "user_id", checkout.User.ID, "created_by", checkout.CreatedBy, "item_count", len(checkout.Items))
 	start := time.Now()
-	
+
 	tx, err := d.DB.Begin()
 	if err != nil {
 		slog.Error("Failed to begin transaction", "error", err)
@@ -214,7 +214,7 @@ func (d *DB) CreateCheckout(checkout *domain.Checkout) error {
 		slog.Error("Failed to commit checkout transaction", "error", err, "checkout_id", checkoutID)
 		return err
 	}
-	
+
 	slog.Info("Checkout created successfully", "checkout_id", checkoutID, "duration_ms", time.Since(start).Milliseconds())
 	return nil
 }
@@ -239,7 +239,6 @@ func (d *DB) ReturnItem(checkoutID int, itemID string) error {
 	return nil
 }
 
-
 func (d *DB) ItemsStatus(ids []string) (*[]domain.ItemStatusResponse, error) {
 	tx, err := d.DB.Begin()
 	if err != nil {
@@ -249,7 +248,7 @@ func (d *DB) ItemsStatus(ids []string) (*[]domain.ItemStatusResponse, error) {
 	invalid_id := false
 	statuses := make([]domain.ItemStatusResponse, 0, len(ids))
 
-	for _, id := range(ids) {
+	for _, id := range ids {
 		var status bool
 		row := tx.QueryRow(getItemStatusQuery, id)
 		err = row.Scan(&status)
@@ -262,7 +261,7 @@ func (d *DB) ItemsStatus(ids []string) (*[]domain.ItemStatusResponse, error) {
 			}
 		} else {
 			statuses = append(statuses, domain.ItemStatusResponse{
-				ID: id,
+				ID:         id,
 				CheckedOut: status,
 			})
 		}

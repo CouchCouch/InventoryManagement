@@ -1,7 +1,9 @@
 package db
 
 import (
+	"database/sql"
 	"encoding/base64"
+	"errors"
 
 	"inventory/internal/domain"
 
@@ -20,17 +22,15 @@ const (
 
 	addAdminSessionQuery = `INSERT INTO session (session_id, user_id, expires_at) VALUES ($1, $2, $3)`
 
-	getAdmin = `
+	getAdminQuery = `
 	SELECT
 		a.user_id,
 		u.name,
 		u.email,
-		a.role,
-		a.password_hash,
-		a.active
+		a.role
 	FROM admins a
 	JOIN users u ON a.user_id = u.id
-	WHERE a.user_id = $1;
+	WHERE u.email = $1;
 	`
 
 	getPassword = `
@@ -73,11 +73,11 @@ func (d *DB) DeactivateAdmin(admin domain.Admin) error {
 	return err
 }
 
-func (d *DB) Login(admin domain.Admin) error {
+func (d *DB) Login(admin domain.AdminLoginRequest) error {
 	hashedPassword := argon2.IDKey([]byte(admin.Password), []byte{'r', 'f', 'c'}, 1, 64*1024, 4, 32)
 	var actualHash []byte
 
-	row := d.DB.QueryRow(getPassword, admin.User.Email)
+	row := d.DB.QueryRow(getPassword, admin.Email)
 	err := row.Scan(&actualHash)
 	if err != nil {
 		return err
@@ -95,4 +95,17 @@ func (d *DB) Login(admin domain.Admin) error {
 	} else {
 		return domain.ErrWrongPassword
 	}
+}
+
+func (d *DB ) AdminByEmail(email string) (*domain.Admin, error) {
+	row := d.DB.QueryRow(getAdminQuery, email)
+
+	var admin domain.Admin
+	if err := row.Scan(&admin.User.ID, &admin.User.Name, &admin.User.Email, &admin.Role); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrUserNotFound
+		}
+		return nil, err
+	}
+	return &admin, nil
 }
