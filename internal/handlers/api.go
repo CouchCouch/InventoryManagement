@@ -78,6 +78,7 @@ func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService) {
 		authAPI := api.Group("/auth")
 		{
 			authAPI.POST("/login", APIHandlerInstance.LoginHandler)
+			authAPI.POST("/logou", APIHandlerInstance.LogoutHandler)
 		}
 		userAPI := api.Group("/users")
 		{

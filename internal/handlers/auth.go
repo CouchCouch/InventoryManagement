@@ -44,3 +44,8 @@ func (s *APIHandler) LoginHandler(c *gin.Context) {
 	c.SetCookie("token", tokenString, 3600, "/", "localhost", false, true)
 	c.JSON(http.StatusOK, gin.H{"login": "success"})
 }
+
+func (s *APIHandler) LogoutHandler(c *gin.Context) {
+	c.SetCookie("token", "", -1, "/", "localhost", false, true)
+	c.JSON(http.StatusOK, gin.H{})
+}
