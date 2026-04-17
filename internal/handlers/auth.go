@@ -25,7 +25,12 @@ func (s *APIHandler) LoginHandler(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, domain.ErrWrongPassword) {
 			slog.Warn("Login failed - wrong password", "email", admin.Email, "ip", c.ClientIP())
-			c.JSON(http.StatusOK, gin.H{"login": "fail"})
+			c.JSON(http.StatusUnauthorized, gin.H{"login": "fail"})
+			return
+		}
+		if errors.Is(err, domain.ErrUserNotFound) {
+			slog.Warn("Login failed - user not found", "email", admin.Email, "ip", c.ClientIP())
+			c.JSON(http.StatusUnauthorized, gin.H{"login": "fail"})
 			return
 		}
 		slog.Error("Login failed - database error", "error", err, "email", admin.Email, "ip", c.ClientIP())

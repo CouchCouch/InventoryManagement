@@ -1,24 +1,17 @@
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { login } from "../query/login"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { redirect } from '@tanstack/react-router'
+import { useLogin } from "@/query/login"
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const {mutate: login, isPending, error} = useLogin()
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
-    login(email, password).then((response) => {
-      if (response === 'success') {
-        console.log('Login successful')
-        throw redirect({
-          to: '/items',
-        })
-      }
-    })
+    login({ email: email, password: password })
   }
 
   return (
@@ -44,7 +37,8 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </Field>
-          <Button type="submit" className="w-full">
+          {error && <p className="text-destructive">{(error as Error).message}</p>}
+          <Button type="submit" className="w-full" disabled={isPending}>
             Login
           </Button>
         </FieldGroup>

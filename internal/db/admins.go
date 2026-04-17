@@ -80,6 +80,9 @@ func (d *DB) Login(admin domain.AdminLoginRequest) error {
 	row := d.DB.QueryRow(getPassword, admin.Email)
 	err := row.Scan(&actualHash)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.ErrUserNotFound
+		}
 		return err
 	}
 

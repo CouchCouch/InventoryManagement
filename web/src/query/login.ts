@@ -1,4 +1,16 @@
-export const login = async(email: string, password: string): Promise<string> => {
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+
+export type LoginInfoT = {
+  email: string;
+  password: string;
+}
+
+export type LoginResponseT = {
+   login: "success" |  "fail"
+}
+
+const login = async(loginInfo: LoginInfoT): Promise<LoginResponseT> => {
   const response = await fetch(
     `${import.meta.env.VITE_API_URL}/auth/login`,
     {
@@ -6,17 +18,42 @@ export const login = async(email: string, password: string): Promise<string> => 
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email: email , password: password }),
+      body: JSON.stringify(loginInfo),
       credentials: 'include',
     }
   );
   if (!response.ok) {
-    throw new Error('Network response was not ok');
+    throw new Error('Login failed');
   }
-  return 'success'
+  return response.json()
 }
 
-export const loginQueryOptions = {
-  queryKey: ['login'],
-  queryFn: login,
+const logout = async(): Promise<void> => {
+  await fetch(`${import.meta.env.VITE_API_URL}/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+}
+
+export const useLogin = () => {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate()
+
+  return useMutation({
+    mutationFn: login,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      navigate({ to: '/' })
+    },
+  })
+}
+
+export const useLogout = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    }
+  })
 }
