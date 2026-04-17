@@ -6,6 +6,7 @@ type Item struct {
 	Type          string `json:"type"`
 	Notes         string `json:"notes,omitempty"`
 	DatePurchased string `json:"date_purchased,omitempty"`
+	Deleted       bool   `json:"deleted"`
 }
 
 type ItemStatusResponse struct {

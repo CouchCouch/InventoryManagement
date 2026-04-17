@@ -23,6 +23,7 @@ const (
 		i.date_purchased
 	FROM items AS i
 	LEFT JOIN item_types t ON i.item_type_id = t.id
+	WHERE i.deleted = false
 	ORDER BY i.date_purchased DESC;
 	`
 
@@ -74,25 +75,25 @@ func (d *DB) Items() (*[]domain.Item, error) {
 	defer rows.Close()
 	items := make([]domain.Item, 0)
 	for rows.Next() {
-		var id, name, item_type, notes string
-		var date_purchased sql.NullTime
-		err := rows.Scan(&id, &name, &item_type, &notes, &date_purchased)
+		var id, name, itemType, notes string
+		var datePurchased sql.NullTime
+		err := rows.Scan(&id, &name, &itemType, &notes, &datePurchased)
 		if err != nil {
 			return nil, err
 		}
-		if date_purchased.Valid {
+		if datePurchased.Valid {
 			items = append(items, domain.Item{
 				ID:            id,
 				Name:          name,
-				Type:          item_type,
+				Type:          itemType,
 				Notes:         notes,
-				DatePurchased: date_purchased.Time.Format("02-01-2006"),
+				DatePurchased: datePurchased.Time.Format("02-01-2006"),
 			})
 		} else {
 			items = append(items, domain.Item{
 				ID:    id,
 				Name:  name,
-				Type:  item_type,
+				Type:  itemType,
 				Notes: notes,
 			})
 		}

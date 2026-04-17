@@ -58,7 +58,7 @@ func (s *APIHandler) AddItemHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{})
+	c.JSON(http.StatusOK, gin.H{"id": item.ID})
 }
 
 func (s *APIHandler) DeleteItemHandler(c *gin.Context) {
@@ -95,4 +95,12 @@ func (s *APIHandler) GetItemsStatusHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, statuses)
+}
+
+func (s *APIHandler) GetItemsTypes(c *gin.Context) {
+	types, err := s.db.ItemTypes()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{})
+	}
+	c.JSON(http.StatusOK, types)
 }
