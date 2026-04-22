@@ -9,7 +9,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const {mutate: login, isPending, error} = useLogin()
 
-  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     login({ email: email, password: password })
   }

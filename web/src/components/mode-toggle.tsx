@@ -14,10 +14,8 @@ export function ModeToggle() {
   const { setTheme } = useTheme()
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Contrast />
-        </Button>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
+        <Contrast />
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuGroup>

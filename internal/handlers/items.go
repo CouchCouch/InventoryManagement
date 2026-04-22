@@ -14,6 +14,13 @@ import (
 
 func (s *APIHandler) GetItemsHandler(c *gin.Context) {
 	id := c.Query("id")
+	types := c.Query("type")
+	sort := c.Query("sort")
+	if types != "" || sort != "" {
+		if types != "" || sort != "" {
+			slog.Info("Filters/Sorting", "types", types, "sort", sort)
+		}
+	}
 	var items *[]domain.Item
 	var err error
 	if id != "" {

@@ -10,13 +10,19 @@ export type ItemT = {
 
 export const itemKeys = {
   all: ['items'] as const,
-  lists: () => [...itemKeys.all, 'list'] as const,
+  lists: (type?: string) => [...itemKeys.all, 'list', type] as const,
   details: () => [...itemKeys.all, 'detail'] as const,
   detail: (id: string) => [...itemKeys.details(), id] as const,
 };
 
-const fetchItems = async(): Promise<ItemT[]> => {
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/items`);
+const fetchItems = async(filter?: string): Promise<ItemT[]> => {
+  let requestUrl = `${import.meta.env.VITE_API_URL}/items`;
+
+  if (filter && filter !== 'none') {
+    requestUrl += `?type=${filter}`;
+  }
+
+  const response = await fetch(requestUrl);
   return await response.json() as Promise<ItemT[]>;
 }
 
@@ -51,10 +57,10 @@ const fetchTypes = async(): Promise<string[]> => {
   return await response.json() as Promise<string[]>;
 }
 
-export const useItems = () => {
+export const useItems = (type?: string) => {
   return useQuery({
-    queryKey: itemKeys.lists(),
-    queryFn: fetchItems,
+    queryKey: itemKeys.lists(type),
+    queryFn: () => fetchItems(type),
   });
 };
 

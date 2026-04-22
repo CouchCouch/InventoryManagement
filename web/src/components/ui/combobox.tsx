@@ -13,44 +13,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 
-// Context to share allowCustomValue down to ComboboxInput and ComboboxContent
-// so they can handle custom text input differently when enabled
-const AllowCustomValueContext = React.createContext<boolean>(false)
-
-function Combobox<Value, Multiple extends boolean | undefined = false>(
-  props: React.ComponentProps<typeof ComboboxPrimitive.Root<Value, Multiple>> & {
-    allowCustomValue?: boolean;
-  }
-) {
-  const { allowCustomValue = false, onValueChange, onInputValueChange, ...restProps } = props;
-  const inputValueRef = React.useRef<string>('')
-
-  // Track input value changes
-  const handleInputValueChange = (value: string, eventDetails: any) => {
-    inputValueRef.current = value
-    onInputValueChange?.(value, eventDetails)
-  }
-
-  // Wrap the original onValueChange to support custom values
-  const handleValueChange = (value: any, eventDetails: any) => {
-    // When allowCustomValue is true and we have input text, capture it as custom value
-    if (allowCustomValue && inputValueRef.current && !value) {
-      onValueChange?.(inputValueRef.current as any, eventDetails)
-    } else {
-      onValueChange?.(value, eventDetails)
-    }
-  }
-
-  return (
-    <AllowCustomValueContext.Provider value={allowCustomValue}>
-      <ComboboxPrimitive.Root<Value, Multiple>
-        {...restProps}
-        onInputValueChange={handleInputValueChange}
-        onValueChange={handleValueChange as any}
-      />
-    </AllowCustomValueContext.Provider>
-  );
-}
+const Combobox = ComboboxPrimitive.Root
 
 function ComboboxValue({ ...props }: ComboboxPrimitive.Value.Props) {
   return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />
@@ -108,16 +71,9 @@ function ComboboxInput({
       />
       <InputGroupAddon align="inline-end">
         {showTrigger && (
-          <InputGroupButton
-            size="icon-xs"
-            variant="ghost"
-            asChild
-            data-slot="input-group-button"
-            className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
-            disabled={disabled}
-          >
-            <ComboboxTrigger />
-          </InputGroupButton>
+          <ComboboxTrigger
+            className="h-6 rounded-[calc(var(--radius)-5px)] px-2 group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
+          />
         )}
         {showClear && <ComboboxClear disabled={disabled} />}
       </InputGroupAddon>
