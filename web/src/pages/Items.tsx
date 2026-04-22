@@ -9,7 +9,7 @@ import { ShoppingCart, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 export default function Items() {
-  const [typeFilter, setTypeFilter] = useState<string>('none')
+  const [typeFilter, setTypeFilter] = useState<string>('Select Type')
 
   const items = useItems(typeFilter).data
 
@@ -24,8 +24,8 @@ export default function Items() {
 
   return (
     <div className="m-2">
-      <div className="m-2">
-        <Select onValueChange={(value: string | null) => setTypeFilter(value || 'none')}>
+      <div className="my-4 grid-cols-5">
+        <Select value={typeFilter} onValueChange={(value: string | null) => setTypeFilter(value || "Select Type")}>
           <SelectTrigger className="w-full max-w-48">
             <SelectValue />
           </SelectTrigger>

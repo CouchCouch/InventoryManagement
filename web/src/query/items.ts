@@ -8,6 +8,11 @@ export type ItemT = {
   date_purchased: Date | null;
 }
 
+export type ItemTypeT = {
+  name: string;
+  filter: string;
+}
+
 export const itemKeys = {
   all: ['items'] as const,
   lists: (type?: string) => [...itemKeys.all, 'list', type] as const,
@@ -18,7 +23,7 @@ export const itemKeys = {
 const fetchItems = async(filter?: string): Promise<ItemT[]> => {
   let requestUrl = `${import.meta.env.VITE_API_URL}/items`;
 
-  if (filter && filter !== 'none') {
+  if (filter && filter !== "Select Type") {
     requestUrl += `?type=${filter}`;
   }
 

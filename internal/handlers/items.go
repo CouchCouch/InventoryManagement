@@ -17,15 +17,15 @@ func (s *APIHandler) GetItemsHandler(c *gin.Context) {
 	types := c.Query("type")
 	sort := c.Query("sort")
 	if types != "" || sort != "" {
-		if types != "" || sort != "" {
-			slog.Info("Filters/Sorting", "types", types, "sort", sort)
-		}
+		slog.Info("Filters/Sorting", "types", types, "sort", sort)
 	}
 	var items *[]domain.Item
 	var err error
 	if id != "" {
 		ids := strings.Split(id, ",")
 		items, err = s.db.ItemsByIDs(ids)
+	} else if types != "" {
+		s.db.ItemsByType(types)
 	} else {
 		items, err = s.db.Items()
 	}

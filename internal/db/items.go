@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	getItemsQuery = `
+	selectItemsQuery = `
 	SELECT
 		i.id,
 		i.name,
@@ -27,7 +27,7 @@ const (
 	ORDER BY i.date_purchased DESC;
 	`
 
-	getItemByIDQuery = `
+	selectItemByIDQuery = `
 	SELECT
 		i.id,
 		i.name,
@@ -39,7 +39,7 @@ const (
 	WHERE id = $1;
 	`
 
-	getItemsByIDsQuery = `
+	selectItemsByIDsQuery = `
 	SELECT
 		i.id,
 		i.name,
@@ -48,7 +48,20 @@ const (
 		i.date_purchased
 	FROM items AS i
 	LEFT JOIN item_types t ON i.item_type_id = t.id
-	WHERE ($1) IN (i.id)
+	WHERE (i.id) IN (%s) AND i.deleted = false
+	ORDER BY i.date_purchased DESC;
+	`
+
+	selectItemsByTypeQuery = `
+	SELECT
+		i.id,
+		i.name,
+		t.name,
+		i.notes,
+		i.date_purchased
+	FROM items AS i
+	LEFT JOIN item_types t ON i.item_type_id = t.id
+	WHERE t.name LIKE $1 AND i.deleted = false
 	ORDER BY i.date_purchased DESC;
 	`
 
@@ -68,7 +81,7 @@ const (
 var itemIDRegex = regexp.MustCompile(`^[a-zA-Z0-9]{2}-[a-zA-Z0-9]{2}-[a-zA-Z0-9]{2}$`)
 
 func (d *DB) Items() (*[]domain.Item, error) {
-	rows, err := d.DB.Query(getItemsQuery)
+	rows, err := d.DB.Query(selectItemsQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -103,32 +116,32 @@ func (d *DB) Items() (*[]domain.Item, error) {
 
 func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
 	idq := strings.Join(ids, ",")
-	rows, err := d.DB.Query(getItemsByIDsQuery, idq)
+	rows, err := d.DB.Query(selectItemsByIDsQuery, idq)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	items := make([]domain.Item, 0, len(ids))
 	for rows.Next() {
-		var id, name, item_type, notes string
-		var date_purchased sql.NullTime
-		err := rows.Scan(&id, &name, &item_type, &notes, &date_purchased)
+		var id, name, itemType, notes string
+		var datePurchased sql.NullTime
+		err := rows.Scan(&id, &name, &itemType, &notes, &datePurchased)
 		if err != nil {
 			return nil, err
 		}
-		if date_purchased.Valid {
+		if datePurchased.Valid {
 			items = append(items, domain.Item{
 				ID:            id,
 				Name:          name,
-				Type:          item_type,
+				Type:          itemType,
 				Notes:         notes,
-				DatePurchased: date_purchased.Time.Format("02-01-2006"),
+				DatePurchased: datePurchased.Time.Format("02-01-2006"),
 			})
 		} else {
 			items = append(items, domain.Item{
 				ID:    id,
 				Name:  name,
-				Type:  item_type,
+				Type:  itemType,
 				Notes: notes,
 			})
 		}
@@ -141,27 +154,27 @@ func (d *DB) Item(id string) (*domain.Item, error) {
 	if !validateItemID(id) {
 		return nil, errors.New(domain.ErrCodeInvalidItemID)
 	}
-	row := d.DB.QueryRow(getItemByIDQuery, id)
-	var name, item_type, notes string
-	var date_purchased sql.NullTime
-	err := row.Scan(&name, &item_type, &notes, &date_purchased)
+	row := d.DB.QueryRow(selectItemByIDQuery, id)
+	var name, itemType, notes string
+	var datePurchased sql.NullTime
+	err := row.Scan(&name, &itemType, &notes, &datePurchased)
 	if err != nil {
 		return nil, err
 	}
 	item := &domain.Item{}
-	if date_purchased.Valid {
+	if datePurchased.Valid {
 		item = &domain.Item{
 			ID:            id,
 			Name:          name,
-			Type:          item_type,
+			Type:          itemType,
 			Notes:         notes,
-			DatePurchased: date_purchased.Time.Format("02-01-2006"),
+			DatePurchased: datePurchased.Time.Format("02-01-2006"),
 		}
 	} else {
 		item = &domain.Item{
 			ID:    id,
 			Name:  name,
-			Type:  item_type,
+			Type:  itemType,
 			Notes: notes,
 		}
 	}
@@ -219,7 +232,7 @@ func (d *DB) addItemType(itemType string) (int, error) {
 }
 
 func (d *DB) AddItem(item *domain.Item) error {
-	slog.Debug("Adding item", "item_id", item.ID, "name", item.Name, "type", item.Type)
+	slog.Debug("Adding item", "itemId", item.ID, "name", item.Name, "type", item.Type)
 
 	if !validateItemID(item.ID) {
 		return errors.New(domain.ErrCodeInvalidItemID)
@@ -243,14 +256,14 @@ func (d *DB) AddItem(item *domain.Item) error {
 	_, err = d.DB.Exec(addItemQuery, item.ID, item.Name, item.Notes, itemTypeID, date)
 	if err != nil {
 		if err.(*pq.Error).Code == "23505" {
-			slog.Warn("Item already exists", "item_id", item.ID)
+			slog.Warn("Item already exists", "itemId", item.ID)
 			return domain.ErrItemAlreadyExists
 		}
-		slog.Error("Failed to add item", "error", err, "item_id", item.ID)
+		slog.Error("Failed to add item", "error", err, "itemId", item.ID)
 		return err
 	}
 
-	slog.Info("Item added successfully", "item_id", item.ID, "name", item.Name)
+	slog.Info("Item added successfully", "itemId", item.ID, "name", item.Name)
 	return nil
 }
 
