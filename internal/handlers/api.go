@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 )
+
 const htmlResponse string = `
 <!DOCTYPE html>
 <html lang="en">
@@ -49,14 +50,13 @@ const htmlResponse string = `
 </html>
 `
 
-
 type APIHandler struct {
 	db   *db.DB
 	auth *auth.AuthService
 }
 
 func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService) {
-	//r.Use(RequestLoggingMiddleware())
+	// r.Use(RequestLoggingMiddleware())
 
 	APIHandlerInstance := &APIHandler{db: db, auth: auth}
 	api := r.Group("/api")

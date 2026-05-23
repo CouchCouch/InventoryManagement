@@ -61,9 +61,10 @@ const (
 	CREATE TABLE IF NOT EXISTS checkout_items (
 		checkout_id INTEGER NOT NULL REFERENCES checkouts(id),
 		item_id VARCHAR(8) NOT NULL REFERENCES items(id),
-		return_date TIMESTAMP DEFAULT NULL
+		return_date TIMESTAMP DEFAULT NULL,
+		PRIMARY KEY(checkout_id, item_id)
 	);
-	CREATE INDEX IF NOT EXISTS idx_checkout_items ON checkout_items (checkout_id, item_id);
+	CREATE UNIQUE INDEX unique_checked_out_item ON checkout_items(item_id) WHERE return_date IS NULL;
 
 	CREATE TABLE IF NOT EXISTS schema_version (
 		version INTEGER NOT NULL DEFAULT 0

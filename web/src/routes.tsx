@@ -6,6 +6,7 @@ import { Root } from "./pages/root";
 import Items from "./pages/Items";
 import Login from "./pages/Login";
 import Index from "./pages/Index";
+import Checkouts from "./pages/Checkouts";
 
 
 const rootRoute = createRootRouteWithContext<{
@@ -50,7 +51,7 @@ const loginRoute = createRoute({
 const checkoutsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/checkouts',
-  component: () => <div>Checkouts</div>
+  component: Checkouts
 })
 
 export const routeTree = rootRoute.addChildren([indexRoute, itemsRoute, loginRoute, checkoutsRoute])

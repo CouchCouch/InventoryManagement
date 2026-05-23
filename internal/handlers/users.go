@@ -34,8 +34,8 @@ func (s *APIHandler) GetUserHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, &domain.UserResponse{
-		ID:	user.ID,
-		Name: user.Name,
+		ID:    user.ID,
+		Name:  user.Name,
 		Email: user.Email,
 	})
 }
@@ -85,8 +85,8 @@ func (s *APIHandler) GetMeHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, &domain.AdminResponse{
 		User: domain.UserResponse{
-			ID:	admin.User.ID,
-			Name: admin.User.Name,
+			ID:    admin.User.ID,
+			Name:  admin.User.Name,
 			Email: admin.User.Email,
 		},
 		Role: admin.Role,

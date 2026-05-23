@@ -1,39 +1,47 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ItemT } from "./items";
+import type { AdminT, UserT } from "./user";
 
-export type ItemT = {
-  id: string;
-  name: string;
-  type: string;
+export type CheckoutItemT = {
+  item: ItemT;
+  returnDate: Date;
+}
+
+export type CheckoutT = {
+  id: number;
+  user: UserT;
+  checkout_date: Date;
+  // if a checkout is for personal use
+  personal: boolean;
   notes: string | null;
-  date_purchased: Date | null;
+  created_by: UserT;
+  items: CheckoutItemT[];
 }
 
-export type ItemTypeT = {
-  name: string;
-  filter: string;
-}
-
+/*
 export const itemKeys = {
   all: ['items'] as const,
   lists: (type?: string) => [...itemKeys.all, 'list', type] as const,
   details: () => [...itemKeys.all, 'detail'] as const,
   detail: (id: string) => [...itemKeys.details(), id] as const,
 };
+*/
 
-const fetchItems = async(filter?: string): Promise<ItemT[]> => {
-  let requestUrl = `${import.meta.env.VITE_API_URL}/items`;
-
-  if (filter && filter !== "Select Type") {
-    requestUrl += `?type=${filter}`;
-  }
-
-  const response = await fetch(requestUrl);
+const fetchCheckouts = async(): Promise<CheckoutT[]> => {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/checkouts`,
+    {
+      method: 'GET',
+      credentials: 'include',
+    }
+  );
   if (!response.ok) {
-    throw new Error('Failed to fetch items');
+    throw new Error('Failed to fetch checkouts');
   }
-  return await response.json() as Promise<ItemT[]>;
+  return await response.json() as Promise<CheckoutT[]>;
 }
 
+/*
 const fetchItem = async(id?: string): Promise<ItemT[]> => {
   const response = await fetch(`${import.meta.env.VITE_API_URL}/items?id=${id}`);
   return await response.json() as Promise<ItemT[]>;
@@ -64,14 +72,16 @@ const fetchTypes = async(): Promise<string[]> => {
   const response = await fetch(`${import.meta.env.VITE_API_URL}/items/types`);
   return await response.json() as Promise<string[]>;
 }
+*/
 
-export const useItems = (type?: string) => {
+export const useCheckouts = () => {
   return useQuery({
-    queryKey: itemKeys.lists(type),
-    queryFn: () => fetchItems(type),
+    queryKey: ['checkouts'],
+    queryFn: () => fetchCheckouts(),
   });
 };
 
+/*
 export const useItem = (id: string) => {
   return useQuery({
     queryKey: itemKeys.detail(id),
@@ -108,3 +118,4 @@ export const useDeleteItem = () => {
     }
   })
 }
+*/

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log/slog"
 	"regexp"
-	"strings"
 	"time"
 
 	"inventory/internal/domain"
@@ -14,59 +13,9 @@ import (
 )
 
 const (
-	selectItemsQuery = `
-	SELECT
-		i.id,
-		i.name,
-		t.name,
-		i.notes,
-		i.date_purchased
-	FROM items AS i
-	LEFT JOIN item_types t ON i.item_type_id = t.id
-	WHERE i.deleted = false
-	ORDER BY i.date_purchased DESC;
-	`
-
-	selectItemByIDQuery = `
-	SELECT
-		i.id,
-		i.name,
-		t.name,
-		i.notes,
-		i.date_purchased
-	FROM items AS i
-	LEFT JOIN item_types t ON i.item_type_id = t.id
-	WHERE id = $1;
-	`
-
-	selectItemsByIDsQuery = `
-	SELECT
-		i.id,
-		i.name,
-		t.name,
-		i.notes,
-		i.date_purchased
-	FROM items AS i
-	LEFT JOIN item_types t ON i.item_type_id = t.id
-	WHERE (i.id) IN (%s) AND i.deleted = false
-	ORDER BY i.date_purchased DESC;
-	`
-
-	selectItemsByTypeQuery = `
-	SELECT
-		i.id,
-		i.name,
-		t.name,
-		i.notes,
-		i.date_purchased
-	FROM items AS i
-	LEFT JOIN item_types t ON i.item_type_id = t.id
-	WHERE t.name LIKE $1 AND i.deleted = false
-	ORDER BY i.date_purchased DESC;
-	`
-
 	// id, name, notes, item_type, date_purchased
-	addItemQuery    = `INSERT into items (id, name, notes, item_type_id, date_purchased) VALUES ($1, $2, $3, $4, $5)`
+	addItemQuery = `INSERT into items (id, name, notes, item_type_id, date_purchased) VALUES ($1, $2, $3, $4, $5)`
+	// name, notes, item_type, id
 	updateItemQuery = `UPDATE items SET name = $1, notes = $2, item_type_id = $3 WHERE id = $4`
 	deleteItemQuery = `UPDATE items SET deleted = true WHERE id = $1`
 
@@ -81,7 +30,16 @@ const (
 var itemIDRegex = regexp.MustCompile(`^[a-zA-Z0-9]{2}-[a-zA-Z0-9]{2}-[a-zA-Z0-9]{2}$`)
 
 func (d *DB) Items() (*[]domain.Item, error) {
-	rows, err := d.DB.Query(selectItemsQuery)
+	selectCols := `i.id, i.name, t.name, i.notes, i.date_purchased`
+	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols)
+	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
+	builder.SetBaseWhere("i.deleted = false")
+	builder.Sort("i.date_purchased", Desc)
+
+	query, params := builder.Build()
+	slog.Debug("Items query", "query", query, "params", params)
+
+	rows, err := d.DB.Query(query, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +73,27 @@ func (d *DB) Items() (*[]domain.Item, error) {
 }
 
 func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
-	idq := strings.Join(ids, ",")
-	rows, err := d.DB.Query(selectItemsByIDsQuery, idq)
+	if len(ids) == 0 {
+		return &[]domain.Item{}, nil
+	}
+
+	selectCols := `i.id, i.name, t.name, i.notes, i.date_purchased`
+	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols)
+	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
+	builder.SetBaseWhere("i.deleted = false")
+
+	// Convert string slice to interface slice for IN operator
+	idParams := make([]any, len(ids))
+	for i, id := range ids {
+		idParams[i] = id
+	}
+	builder.builder.Filter("i.id", OpIn, idParams)
+	builder.Sort("i.date_purchased", Desc)
+
+	query, params := builder.Build()
+	slog.Debug("ItemsByIDs query", "query", query, "ids_count", len(ids))
+
+	rows, err := d.DB.Query(query, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -154,17 +131,25 @@ func (d *DB) Item(id string) (*domain.Item, error) {
 	if !validateItemID(id) {
 		return nil, errors.New(domain.ErrCodeInvalidItemID)
 	}
-	row := d.DB.QueryRow(selectItemByIDQuery, id)
-	var name, itemType, notes string
+
+	selectCols := `i.id, i.name, t.name, i.notes, i.date_purchased`
+	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols)
+	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
+	builder.builder.Filter("i.id", OpEqual, id)
+
+	query, params := builder.Build()
+	row := d.DB.QueryRow(query, params...)
+
+	var itemID, name, itemType, notes string
 	var datePurchased sql.NullTime
-	err := row.Scan(&name, &itemType, &notes, &datePurchased)
+	err := row.Scan(&itemID, &name, &itemType, &notes, &datePurchased)
 	if err != nil {
 		return nil, err
 	}
 	item := &domain.Item{}
 	if datePurchased.Valid {
 		item = &domain.Item{
-			ID:            id,
+			ID:            itemID,
 			Name:          name,
 			Type:          itemType,
 			Notes:         notes,
@@ -172,7 +157,7 @@ func (d *DB) Item(id string) (*domain.Item, error) {
 		}
 	} else {
 		item = &domain.Item{
-			ID:    id,
+			ID:    itemID,
 			Name:  name,
 			Type:  itemType,
 			Notes: notes,
@@ -180,6 +165,50 @@ func (d *DB) Item(id string) (*domain.Item, error) {
 	}
 
 	return item, nil
+}
+
+func (d *DB) ItemsByType(typeFilter string) (*[]domain.Item, error) {
+	selectCols := `i.id, i.name, t.name, i.notes, i.date_purchased`
+	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols)
+	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
+	builder.SetBaseWhere("i.deleted = false")
+	builder.builder.Filter("t.name", OpLike, "%"+typeFilter+"%")
+	builder.Sort("i.date_purchased", Desc)
+
+	query, params := builder.Build()
+	slog.Debug("ItemsByType query", "query", query, "typeFilter", typeFilter)
+
+	rows, err := d.DB.Query(query, params...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := make([]domain.Item, 0)
+	for rows.Next() {
+		var id, name, itemType, notes string
+		var datePurchased sql.NullTime
+		err := rows.Scan(&id, &name, &itemType, &notes, &datePurchased)
+		if err != nil {
+			return nil, err
+		}
+		if datePurchased.Valid {
+			items = append(items, domain.Item{
+				ID:            id,
+				Name:          name,
+				Type:          itemType,
+				Notes:         notes,
+				DatePurchased: datePurchased.Time.Format("02-01-2006"),
+			})
+		} else {
+			items = append(items, domain.Item{
+				ID:    id,
+				Name:  name,
+				Type:  itemType,
+				Notes: notes,
+			})
+		}
+	}
+	return &items, nil
 }
 
 func (d *DB) ItemTypes() ([]string, error) {

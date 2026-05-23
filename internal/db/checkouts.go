@@ -12,22 +12,6 @@ import (
 )
 
 const (
-	getCheckoutsQuery = `
-	SELECT
-		c.id,
-		c.checkout_date,
-		c.notes,
-		u.name,
-		u.email,
-		c.created_by,
-		a.name,
-		a.email
-	FROM checkouts c
-	JOIN users u ON c.user_id = u.id
-	JOIN users a ON c.user_id = a.id
-	ORDER BY c.checkout_date DESC;
-	`
-
 	getCheckoutByIDQuery = `
 	SELECT
 		c.id,
@@ -62,10 +46,20 @@ const (
 	`
 )
 
-func (d *DB) Checkouts() (*[]domain.Checkout, error) {
+func (d *DB) Checkouts() ([]domain.Checkout, error) {
 	slog.Debug("Querying all checkouts")
 	start := time.Now()
-	rows, err := d.DB.Query(getCheckoutsQuery)
+
+	selectCols := `c.id, c.checkout_date, c.notes, u.name, u.email, a.name, a.email`
+	builder := NewSafeQueryBuilder(CheckoutsRegistry, selectCols)
+	builder.AddJoin("JOIN users u ON c.user_id = u.id")
+	builder.AddJoin("JOIN users a ON c.created_by = a.id")
+	builder.Sort("c.checkout_date", Asc)
+
+	query, params := builder.Build()
+	slog.Debug("Checkouts query", "query", query)
+
+	rows, err := d.DB.Query(query, params...)
 	if err != nil {
 		slog.Error("Failed to query checkouts", "error", err, "duration_ms", time.Since(start).Milliseconds())
 		return nil, err
@@ -108,7 +102,7 @@ func (d *DB) Checkouts() (*[]domain.Checkout, error) {
 	}
 
 	slog.Debug("Checkouts query completed", "count", len(checkouts), "duration_ms", time.Since(start).Milliseconds())
-	return &checkouts, nil
+	return checkouts, nil
 }
 
 func (d *DB) Checkout(id int) (*domain.Checkout, error) {
@@ -184,39 +178,39 @@ func (d *DB) Checkout(id int) (*domain.Checkout, error) {
 	return checkout, nil
 }
 
-func (d *DB) CreateCheckout(checkout *domain.Checkout) error {
-	slog.Info("Creating checkout", "user_id", checkout.User.ID, "created_by", checkout.CreatedBy, "item_count", len(checkout.Items))
+func (d *DB) CreateCheckout(user domain.User, items []string, checkoutDate string, createdBy domain.Admin, notes string) (int, error) {
+	slog.Info("Creating checkout", "user_id", user.ID, "created_by", createdBy, "item_count", len(items))
 	start := time.Now()
 
 	tx, err := d.DB.Begin()
 	if err != nil {
 		slog.Error("Failed to begin transaction", "error", err)
-		return err
+		return 0, err
 	}
 
 	var checkoutID int
-	err = tx.QueryRow(createCheckoutQuery, checkout.User.ID, checkout.Notes, checkout.CreatedBy).Scan(&checkoutID)
+	err = tx.QueryRow(createCheckoutQuery, user.ID, notes, createdBy.User.ID).Scan(&checkoutID)
 	if err != nil {
 		tx.Rollback()
-		slog.Error("Failed to create checkout", "error", err, "user_id", checkout.User.ID)
-		return err
+		slog.Error("Failed to create checkout", "error", err)
+		return 0, err
 	}
 
-	for _, checkoutItem := range checkout.Items {
-		if _, err := tx.Exec(addCheckoutItemQuery, checkoutID, checkoutItem.Item.ID); err != nil {
+	for _, id := range items {
+		if _, err := tx.Exec(addCheckoutItemQuery, checkoutID, id); err != nil {
 			tx.Rollback()
-			slog.Error("Failed to add checkout item", "error", err, "checkout_id", checkoutID, "item_id", checkoutItem.Item.ID)
-			return err
+			slog.Error("Failed to add checkout item", "error", err, "checkout_id", checkoutID, "item_id", id)
+			return 0, err
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
 		slog.Error("Failed to commit checkout transaction", "error", err, "checkout_id", checkoutID)
-		return err
+		return 0, err
 	}
 
 	slog.Info("Checkout created successfully", "checkout_id", checkoutID, "duration_ms", time.Since(start).Milliseconds())
-	return nil
+	return checkoutID, nil
 }
 
 func (d *DB) UpdateCheckout(checkout *domain.Checkout) error {

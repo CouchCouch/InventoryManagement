@@ -48,13 +48,13 @@ func main() {
 
 	r := gin.Default()
 	corsConfig := cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowOrigins: []string{"http://localhost:5173"},
+		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
 
 		AllowCredentials: true,
 
-		MaxAge:           12 * time.Hour,
+		MaxAge: 12 * time.Hour,
 	}
 	r.Use(cors.New(corsConfig))
 

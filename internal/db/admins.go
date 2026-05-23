@@ -100,7 +100,7 @@ func (d *DB) Login(admin domain.AdminLoginRequest) error {
 	}
 }
 
-func (d *DB ) AdminByEmail(email string) (*domain.Admin, error) {
+func (d *DB) AdminByEmail(email string) (*domain.Admin, error) {
 	row := d.DB.QueryRow(getAdminQuery, email)
 
 	var admin domain.Admin

@@ -4,6 +4,9 @@ build: build-web
 build-web:
 	cd web && bun i && bun --bun vite build
 
+go-build:
+	go build ./...
+
 format:
 	gofumpt -w .
 
@@ -15,3 +18,4 @@ test:
 
 run: build-web
 	go run cmd/api/main.go
+
