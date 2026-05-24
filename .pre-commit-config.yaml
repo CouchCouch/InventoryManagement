@@ -1,9 +1,14 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
   - repo: local
     hooks:
-      - id: make-fmt
-        name: Format Code (make fmt)
-        entry: make fmt
+      - id: fmt
+        name: Format Code
+        entry: gofumpt -l .
         language: system
         pass_filenames: false
         always_run: true
