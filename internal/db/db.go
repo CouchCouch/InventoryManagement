@@ -67,7 +67,7 @@ const (
 	CREATE UNIQUE INDEX unique_checked_out_item ON checkout_items(item_id) WHERE return_date IS NULL;
 
 	CREATE TABLE IF NOT EXISTS schema_version (
-		version INTEGER NOT NULL DEFAULT 0
+		version INTEGER NOT NULL DEFAULT 0 PRIMARY KEY
 	);
 
 	INSERT INTO schema_version (version) VALUES ($1);
@@ -76,7 +76,7 @@ const (
 	getSchemaVersion    = `SELECT version FROM schema_version`
 	updateSchemaVersion = `UPDATE schema_version SET version = $1`
 
-	schema_version = 4
+	schemaVersion = 4
 )
 
 var migrations = []string{
@@ -98,22 +98,27 @@ func runMigrations(db *sql.DB, start int) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//nolint:errcheck
+	defer tx.Rollback()
+
 	for i := start; i < len(migrations); i++ {
 		_, err := tx.Exec(migrations[i])
 		if err != nil {
-			tx.Rollback()
 			return nil, err
 		}
 	}
-	_, err = tx.Exec(updateSchemaVersion, schema_version)
+
+	_, err = tx.Exec(updateSchemaVersion, schemaVersion)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
+
 	return &DB{DB: db}, nil
 }
 
@@ -127,18 +132,21 @@ func NewDBWithSchema(conf config.PGConfig) (*DB, error) {
 	var version int
 	row := postgresDB.QueryRow(getSchemaVersion)
 	if row.Err() == nil {
-		row.Scan(&version)
-		if version == schema_version {
+		err := row.Scan(&version)
+		if err != nil {
+			return nil, err
+		}
+		if version == schemaVersion {
 			slog.Info("Database schema up to date", "version", version)
 			return &DB{DB: postgresDB}, nil
 		} else {
-			slog.Info("Running database migrations", "from_version", version, "to_version", schema_version)
+			slog.Info("Running database migrations", "from_version", version, "to_version", schemaVersion)
 			return runMigrations(postgresDB, version)
 		}
 	}
 
-	slog.Info("Creating database schema", "version", schema_version)
-	_, err = postgresDB.Exec(databaseSchema, schema_version)
+	slog.Info("Creating database schema", "version", schemaVersion)
+	_, err = postgresDB.Exec(databaseSchema, schemaVersion)
 	if err != nil {
 		return nil, err
 	}

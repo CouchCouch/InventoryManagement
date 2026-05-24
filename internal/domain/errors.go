@@ -19,6 +19,8 @@ const (
 	ErrCodeUserNotFound = "user_not_found"
 	// ErrCodeUserAlreadyExists is returned when a user already exists in the database.
 	ErrCodeUserAlreadyExists = "user_already_exists"
+	// ErrCodeInvalidSortField
+	ErrCodeInvalidSortField = "invalid_sort_field"
 )
 
 var (
@@ -30,4 +32,5 @@ var (
 	ErrWrongPassword     = errors.New(ErrCodeWrongPassword)
 	ErrUserNotFound      = errors.New(ErrCodeUserNotFound)
 	ErrUserAlreadyExists = errors.New(ErrCodeUserAlreadyExists)
+	ErrInvalidSortField  = errors.New(ErrCodeInvalidSortField)
 )

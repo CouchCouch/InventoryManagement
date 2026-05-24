@@ -38,7 +38,7 @@ func (s *APIHandler) LoginHandler(c *gin.Context) {
 		return
 	}
 
-	tokenString, err := s.auth.GenerateJWT(admin.Email)
+	tokenString, err := s.auth.GenerateAccessToken(admin.Email)
 	if err != nil {
 		slog.Error("Error generating JWT", "error", err, "email", admin.Email)
 		c.JSON(http.StatusInternalServerError, gin.H{"login": "fail"})

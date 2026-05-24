@@ -20,11 +20,21 @@ func NewAuthService(jwtSecret, jwtRefreshSecret string) *AuthService {
 	}
 }
 
-func (s *AuthService) GenerateJWT(email string) (string, error) {
+func (s *AuthService) GenerateAccessToken(email string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, domain.Claims{
-		email,
-		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		Email: email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Local().Add(24 * time.Hour)),
+		},
+	})
+	return token.SignedString([]byte(s.JWTSecret))
+}
+
+func (s *AuthService) GenerateRefreshToken(email string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, domain.Claims{
+		Email: email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Local().Add(24 * time.Hour)),
 		},
 	})
 	return token.SignedString([]byte(s.JWTSecret))

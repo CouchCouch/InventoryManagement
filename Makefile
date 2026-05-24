@@ -1,13 +1,10 @@
 build: build-web
-	go build -o bin/app main.go
+	go build -o bin/app cmd/api/main.go
 
 build-web:
 	cd web && bun i && bun --bun vite build
 
-go-build:
-	go build ./...
-
-format:
+fmt:
 	gofumpt -w .
 
 lint:

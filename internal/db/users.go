@@ -47,6 +47,8 @@ func (d *DB) Users() (*[]domain.User, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//nolint:errcheck
 	defer rows.Close()
 
 	var users []domain.User

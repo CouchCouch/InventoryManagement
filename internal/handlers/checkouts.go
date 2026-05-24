@@ -31,19 +31,19 @@ func (s *APIHandler) GetCheckoutsHandler(c *gin.Context) {
 		return
 	}
 	checkoutsJSON := make([]domain.CheckoutResponse, 0, len(checkouts))
-	for _, c := range(checkouts) {
+	for _, c := range checkouts {
 		checkoutsJSON = append(checkoutsJSON, domain.CheckoutResponse{
 			ID: c.ID,
 			User: domain.UserResponse{
-				ID: c.User.ID,
-				Name: c.User.Name,
+				ID:    c.User.ID,
+				Name:  c.User.Name,
 				Email: c.User.Email,
 			},
-			Items: c.Items,
+			Items:        c.Items,
 			CheckoutDate: c.CheckoutDate,
 			CreatedBy: domain.UserResponse{
-				ID: c.CreatedBy.ID,
-				Name: c.CreatedBy.Name,
+				ID:    c.CreatedBy.ID,
+				Name:  c.CreatedBy.Name,
 				Email: c.CreatedBy.Email,
 			},
 			Notes: c.Notes,

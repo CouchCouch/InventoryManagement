@@ -97,7 +97,10 @@ func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService) {
 				c.HTML(500, htmlResponse, gin.H{})
 				return
 			}
+
+			//nolint:errcheck
 			defer index.Close()
+
 			stat, err := index.Stat()
 			if err != nil {
 				slog.Error("Error getting file info", "error", err, "file", "index.html")

@@ -54,7 +54,10 @@ func (d *DB) Checkouts() ([]domain.Checkout, error) {
 	builder := NewSafeQueryBuilder(CheckoutsRegistry, selectCols)
 	builder.AddJoin("JOIN users u ON c.user_id = u.id")
 	builder.AddJoin("JOIN users a ON c.created_by = a.id")
-	builder.Sort("c.checkout_date", Asc)
+	_, err := builder.Sort("c.checkout_date", Asc)
+	if err != nil {
+		return nil, domain.ErrInvalidSortField
+	}
 
 	query, params := builder.Build()
 	slog.Debug("Checkouts query", "query", query)
@@ -64,6 +67,8 @@ func (d *DB) Checkouts() ([]domain.Checkout, error) {
 		slog.Error("Failed to query checkouts", "error", err, "duration_ms", time.Since(start).Milliseconds())
 		return nil, err
 	}
+
+	//nolint:errcheck
 	defer rows.Close()
 
 	checkouts := []domain.Checkout{}
@@ -110,6 +115,8 @@ func (d *DB) Checkout(id int) (*domain.Checkout, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//nolint:errcheck
 	defer rows.Close()
 
 	var checkout *domain.Checkout
@@ -188,17 +195,18 @@ func (d *DB) CreateCheckout(user domain.User, items []string, checkoutDate strin
 		return 0, err
 	}
 
+	//nolint:errcheck
+	defer tx.Rollback()
+
 	var checkoutID int
 	err = tx.QueryRow(createCheckoutQuery, user.ID, notes, createdBy.User.ID).Scan(&checkoutID)
 	if err != nil {
-		tx.Rollback()
 		slog.Error("Failed to create checkout", "error", err)
 		return 0, err
 	}
 
 	for _, id := range items {
 		if _, err := tx.Exec(addCheckoutItemQuery, checkoutID, id); err != nil {
-			tx.Rollback()
 			slog.Error("Failed to add checkout item", "error", err, "checkout_id", checkoutID, "item_id", id)
 			return 0, err
 		}
@@ -239,7 +247,10 @@ func (d *DB) ItemsStatus(ids []string) (*[]domain.ItemStatusResponse, error) {
 		return nil, err
 	}
 
-	invalid_id := false
+	//nolint
+	defer tx.Rollback()
+
+	invalidID := false
 	statuses := make([]domain.ItemStatusResponse, 0, len(ids))
 
 	for _, id := range ids {
@@ -248,9 +259,8 @@ func (d *DB) ItemsStatus(ids []string) (*[]domain.ItemStatusResponse, error) {
 		err = row.Scan(&status)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				invalid_id = true
+				invalidID = true
 			} else {
-				tx.Rollback()
 				return nil, err
 			}
 		} else {
@@ -265,7 +275,7 @@ func (d *DB) ItemsStatus(ids []string) (*[]domain.ItemStatusResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	if invalid_id {
+	if invalidID {
 		return &statuses, domain.ErrInvalidItemID
 	}
 	return &statuses, nil

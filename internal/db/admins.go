@@ -20,8 +20,6 @@ const (
 
 	deactivateAdminQuery = `UPDATE admins SET active = FALSE WHERE user_id = $1;`
 
-	addAdminSessionQuery = `INSERT INTO session (session_id, user_id, expires_at) VALUES ($1, $2, $3)`
-
 	getAdminQuery = `
 	SELECT
 		a.user_id,
@@ -54,15 +52,17 @@ func (d *DB) MakeUserAdmin(admin domain.Admin) error {
 
 	stringHash := base64.RawStdEncoding.EncodeToString(hashedPassword)
 	tx, err := d.DB.Begin()
+
+	//nolint:errcheck
+	defer tx.Rollback()
+
 	if err != nil {
 		return err
 	}
 	if _, err = tx.Exec(disableAdminByRoleQuery, admin.Role); err != nil {
-		tx.Rollback()
 		return err
 	}
 	if _, err = tx.Exec(createAdminQuery, userID.String(), admin.Role, stringHash); err != nil {
-		tx.Rollback()
 		return err
 	}
 	return tx.Commit()

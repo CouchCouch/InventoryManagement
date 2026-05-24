@@ -5,6 +5,8 @@ import (
 	"errors"
 	"log/slog"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"inventory/internal/domain"
@@ -34,7 +36,9 @@ func (d *DB) Items() (*[]domain.Item, error) {
 	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols)
 	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
 	builder.SetBaseWhere("i.deleted = false")
-	builder.Sort("i.date_purchased", Desc)
+	if _, err := builder.Sort("i.date_purchased", Desc); err != nil {
+		return nil, domain.ErrInvalidSortField
+	}
 
 	query, params := builder.Build()
 	slog.Debug("Items query", "query", query, "params", params)
@@ -43,7 +47,10 @@ func (d *DB) Items() (*[]domain.Item, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//nolint:errcheck
 	defer rows.Close()
+
 	items := make([]domain.Item, 0)
 	for rows.Next() {
 		var id, name, itemType, notes string
@@ -78,9 +85,9 @@ func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
 	}
 
 	selectCols := `i.id, i.name, t.name, i.notes, i.date_purchased`
-	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols)
-	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
-	builder.SetBaseWhere("i.deleted = false")
+	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols).
+		AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id").
+		SetBaseWhere("i.deleted = false")
 
 	// Convert string slice to interface slice for IN operator
 	idParams := make([]any, len(ids))
@@ -88,7 +95,9 @@ func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
 		idParams[i] = id
 	}
 	builder.builder.Filter("i.id", OpIn, idParams)
-	builder.Sort("i.date_purchased", Desc)
+	if _, err := builder.Sort("i.date_purchased", Desc); err != nil {
+		return nil, domain.ErrInvalidSortField
+	}
 
 	query, params := builder.Build()
 	slog.Debug("ItemsByIDs query", "query", query, "ids_count", len(ids))
@@ -97,7 +106,10 @@ func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//nolint:errcheck
 	defer rows.Close()
+
 	items := make([]domain.Item, 0, len(ids))
 	for rows.Next() {
 		var id, name, itemType, notes string
@@ -146,7 +158,7 @@ func (d *DB) Item(id string) (*domain.Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	item := &domain.Item{}
+	var item *domain.Item
 	if datePurchased.Valid {
 		item = &domain.Item{
 			ID:            itemID,
@@ -173,7 +185,9 @@ func (d *DB) ItemsByType(typeFilter string) (*[]domain.Item, error) {
 	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
 	builder.SetBaseWhere("i.deleted = false")
 	builder.builder.Filter("t.name", OpLike, "%"+typeFilter+"%")
-	builder.Sort("i.date_purchased", Desc)
+	if _, err := builder.Sort("i.date_purchased", Desc); err != nil {
+		return nil, domain.ErrInvalidSortField
+	}
 
 	query, params := builder.Build()
 	slog.Debug("ItemsByType query", "query", query, "typeFilter", typeFilter)
@@ -182,7 +196,10 @@ func (d *DB) ItemsByType(typeFilter string) (*[]domain.Item, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//nolint:errcheck
 	defer rows.Close()
+
 	items := make([]domain.Item, 0)
 	for rows.Next() {
 		var id, name, itemType, notes string
@@ -216,7 +233,10 @@ func (d *DB) ItemTypes() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//nolint:errcheck
 	defer rows.Close()
+
 	var itemTypes []string
 	for rows.Next() {
 		var itemType string
@@ -231,7 +251,122 @@ func (d *DB) ItemTypes() ([]string, error) {
 	return itemTypes, nil
 }
 
-func (d *DB) getItemTypeID(itemType string) (int, error) {
+// GetItemsWithBuilder builds a query using the SafeQueryBuilder for advanced filtering/sorting
+func (d *DB) GetItemsWithBuilder(typeParam, nameParam, sortParam, limitParam, offsetParam string) (*[]domain.Item, error) {
+	selectCols := `i.id, i.name, t.name, i.notes, i.date_purchased`
+	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols)
+	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
+	builder.SetBaseWhere("i.deleted = false")
+
+	// Apply filters
+	if typeParam != "" {
+		var err error
+		builder, err = builder.Filter("t.name", OpEqual, typeParam)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if nameParam != "" {
+		var err error
+		builder, err = builder.Filter("i.name", OpLike, "%"+nameParam+"%")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Apply sorting (format: "field:asc" or "field:desc", default: date_purchased:desc)
+	sortField := "i.date_purchased"
+	sortDir := Desc
+	if sortParam != "" {
+		parts := strings.Split(sortParam, ":")
+		if len(parts) == 2 {
+			field := parts[0]
+			direction := strings.ToLower(parts[1])
+
+			// Map user-friendly field names to actual column names
+			fieldMap := map[string]string{
+				"id":             "i.id",
+				"name":           "i.name",
+				"type":           "t.name",
+				"date_purchased": "i.date_purchased",
+			}
+
+			if mapped, exists := fieldMap[field]; exists {
+				sortField = mapped
+			}
+
+			switch direction {
+			case "asc":
+				sortDir = Asc
+			case "desc":
+				sortDir = Desc
+			default:
+				sortDir = Asc
+			}
+		}
+	}
+
+	var err error
+	builder, err = builder.Sort(sortField, sortDir)
+	if err != nil {
+		return nil, domain.ErrInvalidSortField
+	}
+
+	// Apply pagination with safe defaults
+	limit := 100
+	if limitParam != "" {
+		if l, parseErr := strconv.Atoi(limitParam); parseErr == nil && l > 0 && l <= 1000 {
+			limit = l
+		}
+	}
+	builder.Limit(limit)
+
+	if offsetParam != "" {
+		if offset, parseErr := strconv.Atoi(offsetParam); parseErr == nil && offset >= 0 {
+			builder.Offset(offset)
+		}
+	}
+
+	query, params := builder.Build()
+	slog.Debug("Items query with builder", "query", query, "type", typeParam, "name", nameParam, "sort", sortParam, "limit", limit)
+
+	rows, err := d.DB.Query(query, params...)
+	if err != nil {
+		slog.Error("Query execution failed", "error", err, "query", query)
+		return nil, err
+	}
+
+	//nolint:errcheck
+	defer rows.Close()
+
+	items := make([]domain.Item, 0)
+	for rows.Next() {
+		var id, name, itemType, notes string
+		var datePurchased sql.NullTime
+		err := rows.Scan(&id, &name, &itemType, &notes, &datePurchased)
+		if err != nil {
+			return nil, err
+		}
+
+		item := domain.Item{
+			ID:    id,
+			Name:  name,
+			Type:  itemType,
+			Notes: notes,
+		}
+
+		if datePurchased.Valid {
+			item.DatePurchased = datePurchased.Time.Format("02-01-2006")
+		}
+
+		items = append(items, item)
+	}
+
+	return &items, nil
+}
+
+func (d *DB) itemTypeID(itemType string) (int, error) {
 	row := d.DB.QueryRow(getTypeIDQuery, itemType)
 	var id int
 	err := row.Scan(&id)
@@ -303,7 +438,7 @@ func (d *DB) UpdateItem(item *domain.Item) error {
 	if item.Name == "" || item.Type == "" {
 		return errors.New("item name and type cannot be empty")
 	}
-	itemTypeID, err := d.getItemTypeID(item.Type)
+	itemTypeID, err := d.itemTypeID(item.Type)
 	if errors.Is(err, sql.ErrNoRows) {
 		itemTypeID, err = d.addItemType(item.Type)
 		if err != nil {

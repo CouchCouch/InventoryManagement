@@ -19,11 +19,11 @@ type CheckoutItem struct {
 }
 
 type CreateCheckoutRequest struct {
-	UserEmail    string    `json:"user_email"`
-	Items        []string  `json:"items"`
-	CheckoutDate string    `json:"checkout_date"`
-	CreatedBy    string    `json:"created_by"`
-	Notes        string    `json:"notes,omitempty"`
+	UserEmail    string   `json:"user_email"`
+	Items        []string `json:"items"`
+	CheckoutDate string   `json:"checkout_date"`
+	CreatedBy    string   `json:"created_by"`
+	Notes        string   `json:"notes,omitempty"`
 }
 
 type CheckoutResponse struct {
