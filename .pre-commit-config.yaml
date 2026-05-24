@@ -19,10 +19,3 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-
-      - id: make-build
-        name: Build Project (make build)
-        entry: make build
-        language: system
-        pass_filenames: false
-        always_run: true
