@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"log/slog"
@@ -31,7 +32,9 @@ const (
 
 var itemIDRegex = regexp.MustCompile(`^[a-zA-Z0-9]{2}-[a-zA-Z0-9]{2}-[a-zA-Z0-9]{2}$`)
 
-func (d *DB) Items() (*[]domain.Item, error) {
+func (d *DB) Items(ctx context.Context) (*[]domain.Item, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 	selectCols := `i.id, i.name, t.name, i.notes, i.date_purchased`
 	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols)
 	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
@@ -41,9 +44,8 @@ func (d *DB) Items() (*[]domain.Item, error) {
 	}
 
 	query, params := builder.Build()
-	slog.Debug("Items query", "query", query, "params", params)
 
-	rows, err := d.DB.Query(query, params...)
+	rows, err := d.DB.QueryContext(ctx, query, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +81,9 @@ func (d *DB) Items() (*[]domain.Item, error) {
 	return &items, nil
 }
 
-func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
+func (d *DB) ItemsByIDs(ctx context.Context, ids []string) (*[]domain.Item, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 	if len(ids) == 0 {
 		return &[]domain.Item{}, nil
 	}
@@ -102,7 +106,7 @@ func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
 	query, params := builder.Build()
 	slog.Debug("ItemsByIDs query", "query", query, "ids_count", len(ids))
 
-	rows, err := d.DB.Query(query, params...)
+	rows, err := d.DB.QueryContext(ctx, query, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +143,9 @@ func (d *DB) ItemsByIDs(ids []string) (*[]domain.Item, error) {
 	return &items, nil
 }
 
-func (d *DB) Item(id string) (*domain.Item, error) {
+func (d *DB) Item(ctx context.Context, id string) (*domain.Item, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 	if !validateItemID(id) {
 		return nil, errors.New(domain.ErrCodeInvalidItemID)
 	}
@@ -150,7 +156,7 @@ func (d *DB) Item(id string) (*domain.Item, error) {
 	builder.builder.Filter("i.id", OpEqual, id)
 
 	query, params := builder.Build()
-	row := d.DB.QueryRow(query, params...)
+	row := d.DB.QueryRowContext(ctx, query, params...)
 
 	var itemID, name, itemType, notes string
 	var datePurchased sql.NullTime
@@ -179,12 +185,16 @@ func (d *DB) Item(id string) (*domain.Item, error) {
 	return item, nil
 }
 
-func (d *DB) ItemsByType(typeFilter string) (*[]domain.Item, error) {
+func (d *DB) ItemsByType(ctx context.Context, typeFilter string) (*[]domain.Item, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 	selectCols := `i.id, i.name, t.name, i.notes, i.date_purchased`
 	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols)
 	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
 	builder.SetBaseWhere("i.deleted = false")
-	builder.builder.Filter("t.name", OpLike, "%"+typeFilter+"%")
+	if _, err := builder.Filter("t.name", OpLike, typeFilter); err != nil {
+		return nil, domain.ErrInvalidFilterField
+	}
 	if _, err := builder.Sort("i.date_purchased", Desc); err != nil {
 		return nil, domain.ErrInvalidSortField
 	}
@@ -192,7 +202,7 @@ func (d *DB) ItemsByType(typeFilter string) (*[]domain.Item, error) {
 	query, params := builder.Build()
 	slog.Debug("ItemsByType query", "query", query, "typeFilter", typeFilter)
 
-	rows, err := d.DB.Query(query, params...)
+	rows, err := d.DB.QueryContext(ctx, query, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -228,8 +238,10 @@ func (d *DB) ItemsByType(typeFilter string) (*[]domain.Item, error) {
 	return &items, nil
 }
 
-func (d *DB) ItemTypes() ([]string, error) {
-	rows, err := d.DB.Query(selectItemTypesQuery)
+func (d *DB) ItemTypes(ctx context.Context) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	rows, err := d.DB.QueryContext(ctx, selectItemTypesQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +264,9 @@ func (d *DB) ItemTypes() ([]string, error) {
 }
 
 // GetItemsWithBuilder builds a query using the SafeQueryBuilder for advanced filtering/sorting
-func (d *DB) GetItemsWithBuilder(typeParam, nameParam, sortParam, limitParam, offsetParam string) (*[]domain.Item, error) {
+func (d *DB) GetItemsWithBuilder(ctx context.Context, typeParam, nameParam, sortParam, limitParam, offsetParam string) (*[]domain.Item, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 	selectCols := `i.id, i.name, t.name, i.notes, i.date_purchased`
 	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols)
 	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
@@ -331,7 +345,7 @@ func (d *DB) GetItemsWithBuilder(typeParam, nameParam, sortParam, limitParam, of
 	query, params := builder.Build()
 	slog.Debug("Items query with builder", "query", query, "type", typeParam, "name", nameParam, "sort", sortParam, "limit", limit)
 
-	rows, err := d.DB.Query(query, params...)
+	rows, err := d.DB.QueryContext(ctx, query, params...)
 	if err != nil {
 		slog.Error("Query execution failed", "error", err, "query", query)
 		return nil, err
@@ -366,8 +380,10 @@ func (d *DB) GetItemsWithBuilder(typeParam, nameParam, sortParam, limitParam, of
 	return &items, nil
 }
 
-func (d *DB) itemTypeID(itemType string) (int, error) {
-	row := d.DB.QueryRow(getTypeIDQuery, itemType)
+func (d *DB) itemTypeID(ctx context.Context, itemType string) (int, error) {
+	ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+	defer cancel()
+	row := d.DB.QueryRowContext(ctx, getTypeIDQuery, itemType)
 	var id int
 	err := row.Scan(&id)
 	if err != nil {
@@ -379,11 +395,13 @@ func (d *DB) itemTypeID(itemType string) (int, error) {
 	return id, nil
 }
 
-func (d *DB) addItemType(itemType string) (int, error) {
+func (d *DB) addItemType(ctx context.Context, itemType string) (int, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
 	if itemType == "" {
 		return -1, errors.New("null or empty item type is not allowed")
 	}
-	row := d.DB.QueryRow(insertItemTypeQuery, itemType)
+	row := d.DB.QueryRowContext(ctx, insertItemTypeQuery, itemType)
 	var id int
 	err := row.Scan(&id)
 	if err != nil {
@@ -395,7 +413,9 @@ func (d *DB) addItemType(itemType string) (int, error) {
 	return id, nil
 }
 
-func (d *DB) AddItem(item *domain.Item) error {
+func (d *DB) AddItem(ctx context.Context, item *domain.Item) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
 	slog.Debug("Adding item", "itemId", item.ID, "name", item.Name, "type", item.Type)
 
 	if !validateItemID(item.ID) {
@@ -405,7 +425,7 @@ func (d *DB) AddItem(item *domain.Item) error {
 		return errors.New("item name and type cannot be empty")
 	}
 	// Assuming item type ID is fetched from the database or passed in some way
-	itemTypeID, err := d.addItemType(item.Type)
+	itemTypeID, err := d.addItemType(ctx, item.Type)
 	if err != nil {
 		slog.Error("Failed to add/get item type", "error", err, "type", item.Type)
 		return err
@@ -417,7 +437,7 @@ func (d *DB) AddItem(item *domain.Item) error {
 			date = sql.NullTime{Valid: false}
 		}
 	}
-	_, err = d.DB.Exec(addItemQuery, item.ID, item.Name, item.Notes, itemTypeID, date)
+	_, err = d.DB.ExecContext(ctx, addItemQuery, item.ID, item.Name, item.Notes, itemTypeID, date)
 	if err != nil {
 		if err.(*pq.Error).Code == "23505" {
 			slog.Warn("Item already exists", "itemId", item.ID)
@@ -431,32 +451,36 @@ func (d *DB) AddItem(item *domain.Item) error {
 	return nil
 }
 
-func (d *DB) UpdateItem(item *domain.Item) error {
+func (d *DB) UpdateItem(ctx context.Context, item *domain.Item) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
 	if !validateItemID(item.ID) {
 		return errors.New(domain.ErrCodeInvalidItemID)
 	}
 	if item.Name == "" || item.Type == "" {
 		return errors.New("item name and type cannot be empty")
 	}
-	itemTypeID, err := d.itemTypeID(item.Type)
+	itemTypeID, err := d.itemTypeID(ctx, item.Type)
 	if errors.Is(err, sql.ErrNoRows) {
-		itemTypeID, err = d.addItemType(item.Type)
+		itemTypeID, err = d.addItemType(ctx, item.Type)
 		if err != nil {
 			return err
 		}
 	}
-	_, err = d.DB.Exec(updateItemQuery, item.Name, item.Notes, itemTypeID, item.ID)
+	_, err = d.DB.ExecContext(ctx, updateItemQuery, item.Name, item.Notes, itemTypeID, item.ID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (d *DB) DeleteItem(id string) error {
+func (d *DB) DeleteItem(ctx context.Context, id string) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
 	if !validateItemID(id) {
 		return errors.New(domain.ErrCodeInvalidItemID)
 	}
-	_, err := d.DB.Exec(deleteItemQuery, id)
+	_, err := d.DB.ExecContext(ctx, deleteItemQuery, id)
 	if err != nil {
 		return err
 	}

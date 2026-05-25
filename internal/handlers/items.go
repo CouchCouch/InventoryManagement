@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -13,6 +14,9 @@ import (
 )
 
 func (s *APIHandler) GetItemsHandler(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
+
 	// Query parameters
 	idParam := c.Query("id")
 	typeParam := c.Query("type")
@@ -24,19 +28,15 @@ func (s *APIHandler) GetItemsHandler(c *gin.Context) {
 	var items *[]domain.Item
 	var err error
 
-	// If using legacy id parameter, use optimized path
 	if idParam != "" {
 		ids := strings.Split(idParam, ",")
-		items, err = s.db.ItemsByIDs(ids)
+		items, err = s.db.ItemsByIDs(ctx, ids)
 	} else if typeParam != "" && nameParam == "" && sortParam == "" && limitParam == "" && offsetParam == "" {
-		// Simple type filter without sorting/pagination - use optimized path
-		items, err = s.db.ItemsByType(typeParam)
+		items, err = s.db.ItemsByType(ctx, typeParam)
 	} else if typeParam == "" && nameParam == "" && sortParam == "" && limitParam == "" && offsetParam == "" {
-		// No filters - use simple query
-		items, err = s.db.Items()
+		items, err = s.db.Items(ctx)
 	} else {
-		// Use query builder for advanced filtering/sorting/pagination
-		items, err = s.db.GetItemsWithBuilder(typeParam, nameParam, sortParam, limitParam, offsetParam)
+		items, err = s.db.GetItemsWithBuilder(ctx, typeParam, nameParam, sortParam, limitParam, offsetParam)
 	}
 
 	if err != nil {
@@ -52,6 +52,9 @@ func (s *APIHandler) GetItemsHandler(c *gin.Context) {
 }
 
 func (s *APIHandler) AddItemHandler(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
+	defer cancel()
+
 	item := domain.Item{}
 	err := c.ShouldBindJSON(&item)
 	if err != nil {
@@ -66,7 +69,7 @@ func (s *APIHandler) AddItemHandler(c *gin.Context) {
 			return
 		}
 	}
-	err = s.db.AddItem(&item)
+	err = s.db.AddItem(ctx, &item)
 	if err != nil {
 		if errors.Is(err, domain.ErrItemAlreadyExists) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -80,6 +83,9 @@ func (s *APIHandler) AddItemHandler(c *gin.Context) {
 }
 
 func (s *APIHandler) DeleteItemHandler(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
+	defer cancel()
+
 	id := c.Query("id")
 	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing id parameter"})
@@ -88,7 +94,7 @@ func (s *APIHandler) DeleteItemHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bulk Deletes Not supported"})
 		return
 	}
-	err := s.db.DeleteItem(id)
+	err := s.db.DeleteItem(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -97,13 +103,16 @@ func (s *APIHandler) DeleteItemHandler(c *gin.Context) {
 }
 
 func (s *APIHandler) GetItemsStatusHandler(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
+
 	id := c.Query("id")
 	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing ids"})
 		return
 	}
 	ids := strings.Split(id, ",")
-	statuses, err := s.db.ItemsStatus(ids)
+	statuses, err := s.db.ItemsStatus(ctx, ids)
 	if err != nil {
 		if errors.Is(err, domain.ErrInvalidItemID) {
 			c.JSON(http.StatusMultiStatus, statuses)
@@ -116,7 +125,10 @@ func (s *APIHandler) GetItemsStatusHandler(c *gin.Context) {
 }
 
 func (s *APIHandler) GetItemsTypes(c *gin.Context) {
-	types, err := s.db.ItemTypes()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
+	defer cancel()
+
+	types, err := s.db.ItemTypes(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 	}

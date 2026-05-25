@@ -157,6 +157,55 @@ var CheckoutsRegistry = &TableRegistry{
 	},
 }
 
+// CheckoutItemsRegistry defines fields for the checkout_items table
+var CheckoutItemsRegistry = &TableRegistry{
+	TableName: "checkout_items ci",
+	Fields: map[string]FieldMetadata{
+		"ci.checkout_id": {
+			Name:       "ci.checkout_id",
+			Type:       FieldTypeInt,
+			Filterable: true,
+			Sortable:   true,
+		},
+		"ci.item_id": {
+			Name:       "ci.item_id",
+			Type:       FieldTypeString,
+			Filterable: true,
+			Sortable:   true,
+		},
+		"ci.return_date": {
+			Name:       "ci.return_date",
+			Type:       FieldTypeTimestamp,
+			Filterable: true,
+			Sortable:   false,
+		},
+		"i.name": {
+			Name:       "i.name",
+			Type:       FieldTypeString,
+			Filterable: true,
+			Sortable:   true,
+		},
+		"t.name": {
+			Name:       "t.name",
+			Type:       FieldTypeString,
+			Filterable: true,
+			Sortable:   true,
+		},
+		"i.notes": {
+			Name:       "i.notes",
+			Type:       FieldTypeString,
+			Filterable: false,
+			Sortable:   false,
+		},
+		"i.deleted": {
+			Name:       "i.deleted",
+			Type:       FieldTypeBool,
+			Filterable: true,
+			Sortable:   false,
+		},
+	},
+}
+
 // SafeQueryBuilder wraps QueryBuilder with field validation
 type SafeQueryBuilder struct {
 	builder  *QueryBuilder

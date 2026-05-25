@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"inventory/internal/domain"
 
@@ -11,6 +13,9 @@ import (
 )
 
 func (s *APIHandler) LoginHandler(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
+
 	var admin domain.AdminLoginRequest
 	err := c.ShouldBindBodyWithJSON(&admin)
 	if err != nil {
@@ -21,7 +26,7 @@ func (s *APIHandler) LoginHandler(c *gin.Context) {
 
 	slog.Info("Login attempt", "email", admin.Email, "ip", c.ClientIP())
 
-	err = s.db.Login(admin)
+	err = s.db.Login(ctx, admin)
 	if err != nil {
 		if errors.Is(err, domain.ErrWrongPassword) {
 			slog.Warn("Login failed - wrong password", "email", admin.Email, "ip", c.ClientIP())

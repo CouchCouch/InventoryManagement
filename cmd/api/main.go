@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -59,13 +60,14 @@ func main() {
 	r.Use(cors.New(corsConfig))
 
 	authService := auth.NewAuthService(conf.Auth.JWTSecret, conf.Auth.JWTRrefreshSecret)
-	database, err := db.NewDBWithSchema(conf.DB)
+	ctx := context.Background()
+	database, err := db.NewDBWithSchema(ctx, conf.DB)
 	if err != nil {
 		slog.Error("failed to setup database", "error", err)
 		os.Exit(1)
 	}
 
-	err = database.MakeUserAdmin(conf.Admin.GetAdmin())
+	err = database.MakeUserAdmin(ctx, conf.Admin.GetAdmin())
 	if err != nil {
 		if errors.Is(err, domain.ErrUserAlreadyExists) {
 			slog.Info("Skipped adding user, user already exists")

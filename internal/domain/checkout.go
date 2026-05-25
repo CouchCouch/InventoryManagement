@@ -11,6 +11,7 @@ type Checkout struct {
 	CheckoutDate time.Time
 	CreatedBy    User
 	Notes        string
+	Returned     bool
 }
 
 type CheckoutItem struct {
@@ -33,4 +34,5 @@ type CheckoutResponse struct {
 	CheckoutDate time.Time      `json:"checkout_date"`
 	CreatedBy    UserResponse   `json:"created_by"`
 	Notes        string         `json:"notes,omitempty"`
+	Returned     bool           `json:"returned"`
 }

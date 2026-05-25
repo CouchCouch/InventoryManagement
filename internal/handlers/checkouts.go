@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -12,6 +13,9 @@ import (
 )
 
 func (s *APIHandler) GetCheckoutsHandler(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	id := c.Query("id")
 	var checkouts []domain.Checkout
 	var err error
@@ -23,7 +27,7 @@ func (s *APIHandler) GetCheckoutsHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Fetching checkout by ID is not supported yet"})
 		return
 	} else {
-		checkouts, err = s.db.Checkouts()
+		checkouts, err = s.db.Checkouts(ctx)
 	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{})
@@ -53,6 +57,9 @@ func (s *APIHandler) GetCheckoutsHandler(c *gin.Context) {
 }
 
 func (s *APIHandler) CreateCheckoutHandler(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	checkout := domain.CreateCheckoutRequest{}
 	err := c.ShouldBindJSON(&checkout)
 	if err != nil {
@@ -60,7 +67,7 @@ func (s *APIHandler) CreateCheckoutHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{})
 		return
 	}
-	user, err := s.db.UserByEmail(checkout.UserEmail)
+	user, err := s.db.UserByEmail(ctx, checkout.UserEmail)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			slog.Info("User not found by email", "error", err)
@@ -71,7 +78,7 @@ func (s *APIHandler) CreateCheckoutHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	admin, err := s.db.AdminByEmail(checkout.CreatedBy)
+	admin, err := s.db.AdminByEmail(ctx, checkout.CreatedBy)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			slog.Info("Failed to lookup admin", "error", err)
@@ -89,7 +96,7 @@ func (s *APIHandler) CreateCheckoutHandler(c *gin.Context) {
 			return
 		}
 	}
-	checkoutID, err := s.db.CreateCheckout(*user, checkout.Items, checkout.CheckoutDate, *admin, checkout.Notes)
+	checkoutID, err := s.db.CreateCheckout(ctx, *user, checkout.Items, checkout.CheckoutDate, *admin, checkout.Notes)
 	if err != nil {
 		slog.Error("Failed to create checkout", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})

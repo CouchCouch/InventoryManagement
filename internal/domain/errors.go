@@ -21,16 +21,22 @@ const (
 	ErrCodeUserAlreadyExists = "user_already_exists"
 	// ErrCodeInvalidSortField
 	ErrCodeInvalidSortField = "invalid_sort_field"
+	// ErrCodeInvalidFilterField
+	ErrCodeInvalidFilterField = "invalid_filter_field"
+	// ErrCodeInvalidHash is returned when a stored hash doesn't mathch the right format
+	ErrCodeInvalidHash = "invalid_password_hash"
 )
 
 var (
-	ErrItemNotFound      = errors.New(ErrCodeItemNotFound)
-	ErrItemAlreadyExists = errors.New(ErrCodeItemAlreadyExists)
-	ErrInvalidItemID     = errors.New(ErrCodeInvalidItemID)
-	ErrInvalidItemType   = errors.New(ErrCodeInvalidItemType)
-	ErrWrongSchema       = errors.New(ErrCodeWrongSchema)
-	ErrWrongPassword     = errors.New(ErrCodeWrongPassword)
-	ErrUserNotFound      = errors.New(ErrCodeUserNotFound)
-	ErrUserAlreadyExists = errors.New(ErrCodeUserAlreadyExists)
-	ErrInvalidSortField  = errors.New(ErrCodeInvalidSortField)
+	ErrItemNotFound       = errors.New(ErrCodeItemNotFound)
+	ErrItemAlreadyExists  = errors.New(ErrCodeItemAlreadyExists)
+	ErrInvalidItemID      = errors.New(ErrCodeInvalidItemID)
+	ErrInvalidItemType    = errors.New(ErrCodeInvalidItemType)
+	ErrWrongSchema        = errors.New(ErrCodeWrongSchema)
+	ErrWrongPassword      = errors.New(ErrCodeWrongPassword)
+	ErrUserNotFound       = errors.New(ErrCodeUserNotFound)
+	ErrUserAlreadyExists  = errors.New(ErrCodeUserAlreadyExists)
+	ErrInvalidSortField   = errors.New(ErrCodeInvalidSortField)
+	ErrInvalidFilterField = errors.New(ErrCodeInvalidFilterField)
+	ErrInvalidHash        = errors.New(ErrCodeInvalidHash)
 )

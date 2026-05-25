@@ -1,9 +1,11 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"log/slog"
+	"time"
 
 	"inventory/internal/domain"
 
@@ -42,8 +44,11 @@ const (
 )
 
 // Users retrieves all users from the database
-func (d *DB) Users() (*[]domain.User, error) {
-	rows, err := d.DB.Query(getUsersQuery)
+func (d *DB) Users(ctx context.Context) (*[]domain.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	rows, err := d.DB.QueryContext(ctx, getUsersQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +71,11 @@ func (d *DB) Users() (*[]domain.User, error) {
 }
 
 // User retrieves a user by their ID
-func (d *DB) User(id int) (*domain.User, error) {
-	row := d.DB.QueryRow(getUserByIDQuery, id)
+func (d *DB) User(ctx context.Context, id int) (*domain.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	row := d.DB.QueryRowContext(ctx, getUserByIDQuery, id)
 
 	var user domain.User
 	err := row.Scan(&user.ID, &user.Name, &user.Email)
@@ -80,9 +88,10 @@ func (d *DB) User(id int) (*domain.User, error) {
 	return &user, nil
 }
 
-// User retrieves a user by their Email
-func (d *DB) UserByEmail(email string) (*domain.User, error) {
-	row := d.DB.QueryRow(getUserByEmailQuery, email)
+func (d *DB) UserByEmail(ctx context.Context, email string) (*domain.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	row := d.DB.QueryRowContext(ctx, getUserByEmailQuery, email)
 
 	var user domain.User
 	if err := row.Scan(&user.ID, &user.Name, &user.Email); err != nil {
@@ -94,21 +103,22 @@ func (d *DB) UserByEmail(email string) (*domain.User, error) {
 	return &user, nil
 }
 
-// CreateUser creates a new user in the database, is there is already a user with the given email, the user id is returned
-func (d *DB) CreateUser(user *domain.User) (uuid.UUID, error) {
-	slog.Info("Creating user", "email", user.Email, "name", user.Name)
+// CreateUser creates a new user in the database, if there is already a user with the given email, the user id is returned
+func (d *DB) CreateUser(ctx context.Context, user *domain.User) (uuid.UUID, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	id := uuid.New()
-	err := d.DB.QueryRow(createUserQuery, id, user.Name, user.Email).Scan(&id)
+	_, err := d.DB.ExecContext(ctx, createUserQuery, id, user.Name, user.Email)
 	if err != nil {
-		if err.(*pq.Error).Code == "23505" {
-			slog.Warn("User already exists", "email", user.Email)
-			return uuid.Nil, domain.ErrUserAlreadyExists
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Code == "23505" {
+				slog.Warn("User already exists", "email", user.Email)
+				return uuid.Nil, domain.ErrUserAlreadyExists
+			}
 		}
-		slog.Error("Failed to create user", "error", err, "email", user.Email)
 		return uuid.Nil, err
 	}
 
-	slog.Info("User created successfully", "user_id", id, "email", user.Email)
 	return id, nil
 }

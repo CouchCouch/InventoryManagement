@@ -1,8 +1,10 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"log/slog"
+	"time"
 
 	"inventory/internal/config"
 
@@ -93,8 +95,10 @@ type DB struct {
 	DB *sql.DB
 }
 
-func runMigrations(db *sql.DB, start int) (*DB, error) {
-	tx, err := db.Begin()
+func runMigrations(ctx context.Context, db *sql.DB, start int) (*DB, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -103,13 +107,13 @@ func runMigrations(db *sql.DB, start int) (*DB, error) {
 	defer tx.Rollback()
 
 	for i := start; i < len(migrations); i++ {
-		_, err := tx.Exec(migrations[i])
+		_, err := tx.ExecContext(ctx, migrations[i])
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	_, err = tx.Exec(updateSchemaVersion, schemaVersion)
+	_, err = tx.ExecContext(ctx, updateSchemaVersion, schemaVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +126,9 @@ func runMigrations(db *sql.DB, start int) (*DB, error) {
 	return &DB{DB: db}, nil
 }
 
-func NewDBWithSchema(conf config.PGConfig) (*DB, error) {
+func NewDBWithSchema(ctx context.Context, conf config.PGConfig) (*DB, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	slog.Info("Connecting to database", "host", conf.Host, "port", conf.Port, "database", conf.Database)
 	postgresDB, err := sql.Open("postgres", conf.ConnStr())
 	if err != nil {
@@ -130,7 +136,7 @@ func NewDBWithSchema(conf config.PGConfig) (*DB, error) {
 	}
 
 	var version int
-	row := postgresDB.QueryRow(getSchemaVersion)
+	row := postgresDB.QueryRowContext(ctx, getSchemaVersion)
 	if row.Err() == nil {
 		err := row.Scan(&version)
 		if err != nil {
@@ -141,12 +147,12 @@ func NewDBWithSchema(conf config.PGConfig) (*DB, error) {
 			return &DB{DB: postgresDB}, nil
 		} else {
 			slog.Info("Running database migrations", "from_version", version, "to_version", schemaVersion)
-			return runMigrations(postgresDB, version)
+			return runMigrations(ctx, postgresDB, version)
 		}
 	}
 
 	slog.Info("Creating database schema", "version", schemaVersion)
-	_, err = postgresDB.Exec(databaseSchema, schemaVersion)
+	_, err = postgresDB.ExecContext(ctx, databaseSchema, schemaVersion)
 	if err != nil {
 		return nil, err
 	}

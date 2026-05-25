@@ -1,37 +1,16 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"log/slog"
 	"time"
 
 	"inventory/internal/domain"
-
-	"github.com/google/uuid"
 )
 
 const (
-	getCheckoutByIDQuery = `
-	SELECT
-		c.id,
-		c.checkout_date,
-		c.notes,
-		u.id as user_id,
-		u.last_name,
-		u.email,
-		c.created_by,
-		i.id as item_id,
-		i.name as item_name,
-		it.name as item_type,
-		ci.return_date
-	FROM checkouts c
-	LEFT JOIN checkout_items ci ON c.id = ci.checkout_id
-	LEFT JOIN items i ON ci.item_id = i.id
-	LEFT JOIN item_types it ON i.item_type_id = it.id
-	WHERE c.id = $1;
-	`
-
 	createCheckoutQuery  = `INSERT INTO checkouts (user_id, notes, created_by) VALUES ($1, $2, $3) RETURNING id;`
 	addCheckoutItemQuery = `INSERT INTO checkout_items (checkout_id, item_id) VALUES ($1, $2);`
 
@@ -40,15 +19,16 @@ const (
 	returnItemQuery = `UPDATE checkout_items SET return_date = CURRENT_TIMESTAMP WHERE checkout_id = $1 AND item_id = $2 AND return_date IS NULL;`
 
 	getItemStatusQuery = `
-	SELECT returned FROM checkout_items
-	ci JOIN eheckouts c ON c.id = ci.checkout_id
-	WHERE item_id = $1 ORDER BY c.checkout_date DESC LIMIT 1
+	SELECT returned FROM checkout_items ci
+	JOIN checkouts c ON c.id = ci.checkout_id
+	WHERE item_id = $1 ORDER BY c.checkout_date
+	ORDER BY checkout_date DESC NULLS FIRST LIMIT 1
 	`
 )
 
-func (d *DB) Checkouts() ([]domain.Checkout, error) {
-	slog.Debug("Querying all checkouts")
-	start := time.Now()
+func (d *DB) Checkouts(ctx context.Context) ([]domain.Checkout, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	selectCols := `c.id, c.checkout_date, c.notes, u.name, u.email, a.name, a.email`
 	builder := NewSafeQueryBuilder(CheckoutsRegistry, selectCols)
@@ -60,16 +40,18 @@ func (d *DB) Checkouts() ([]domain.Checkout, error) {
 	}
 
 	query, params := builder.Build()
-	slog.Debug("Checkouts query", "query", query)
 
-	rows, err := d.DB.Query(query, params...)
+	tx, err := d.DB.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		slog.Error("Failed to query checkouts", "error", err, "duration_ms", time.Since(start).Milliseconds())
 		return nil, err
 	}
-
 	//nolint:errcheck
-	defer rows.Close()
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, query, params...)
+	if err != nil {
+		return nil, err
+	}
 
 	checkouts := []domain.Checkout{}
 	for rows.Next() {
@@ -106,90 +88,159 @@ func (d *DB) Checkouts() ([]domain.Checkout, error) {
 		})
 	}
 
-	slog.Debug("Checkouts query completed", "count", len(checkouts), "duration_ms", time.Since(start).Milliseconds())
+	for i, checkout := range checkouts {
+		checkoutItems, err := checkoutItems(ctx, tx, checkout.ID)
+		if err != nil {
+			checkouts[i].Items = []domain.CheckoutItem{}
+		} else {
+			checkouts[i].Items = checkoutItems
+		}
+	}
+
 	return checkouts, nil
 }
 
-func (d *DB) Checkout(id int) (*domain.Checkout, error) {
-	rows, err := d.DB.Query(getCheckoutByIDQuery, id)
+func checkoutItems(ctx context.Context, tx *sql.Tx, id int) ([]domain.CheckoutItem, error) {
+	selectCols := `ci.item_id, ci.returnDate, i.name, t.name, i.notes`
+	builder := NewSafeQueryBuilder(CheckoutItemsRegistry, selectCols)
+	builder.AddJoin("JOIN items i ON ci.item_id = i.id")
+	builder.AddJoin("JOIN item_types t ON i.item_type_id = t.id")
+	if _, err := builder.Filter("ci.checkout_id", OpLike, id); err != nil {
+		return nil, domain.ErrInvalidFilterField
+	}
+	_, err := builder.Sort("ci.item_id", Asc)
+	if err != nil {
+		return nil, domain.ErrInvalidSortField
+	}
+	query, params := builder.Build()
+
+	rows, err := tx.QueryContext(ctx, query, params...)
 	if err != nil {
 		return nil, err
 	}
 
-	//nolint:errcheck
-	defer rows.Close()
-
-	var checkout *domain.Checkout
+	checkoutItems := []domain.CheckoutItem{}
 	for rows.Next() {
-		var checkoutID int
-		var checkoutDate time.Time
-		var checkoutNotes sql.NullString
-		var userID uuid.UUID
-		var userName, userEmail string
-		var createdBy uuid.UUID
-		var itemID, itemName, itemType sql.NullString
+		var itemID, itemName, itemType string
+		var notes sql.NullString
 		var returnDate sql.NullTime
 
 		err := rows.Scan(
-			&checkoutID,
-			&checkoutDate,
-			&checkoutNotes,
-			&userID,
-			&userName,
-			&userEmail,
-			&createdBy,
 			&itemID,
+			&returnDate,
 			&itemName,
 			&itemType,
-			&returnDate,
+			&notes,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		if checkout == nil {
-			checkout = &domain.Checkout{
-				ID:           checkoutID,
-				CheckoutDate: checkoutDate,
-				Notes:        checkoutNotes.String,
-				User: domain.User{
-					ID:    userID,
-					Name:  userName,
-					Email: userEmail,
-				},
-				Items: []domain.CheckoutItem{},
-			}
-		}
-
-		if itemID.Valid {
-			checkoutItem := domain.CheckoutItem{
+		if notes.Valid {
+			checkoutItems = append(checkoutItems, domain.CheckoutItem{
 				Item: domain.Item{
-					ID:   itemID.String,
-					Name: itemName.String,
-					Type: itemType.String,
+					ID:    itemID,
+					Name:  itemName,
+					Type:  itemType,
+					Notes: notes.String,
 				},
-			}
-			if returnDate.Valid {
-				checkoutItem.ReturnDate = returnDate.Time
-			}
-			checkout.Items = append(checkout.Items, checkoutItem)
+				ReturnDate: returnDate.Time,
+			})
+		} else {
+			checkoutItems = append(checkoutItems, domain.CheckoutItem{
+				Item: domain.Item{
+					ID:   itemID,
+					Name: itemName,
+					Type: itemType,
+				},
+				ReturnDate: returnDate.Time,
+			})
 		}
 	}
-	if err = rows.Err(); err != nil {
+
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	if checkout == nil {
-		return nil, sql.ErrNoRows
-	}
 
-	return checkout, nil
+	return checkoutItems, nil
 }
 
-func (d *DB) CreateCheckout(user domain.User, items []string, checkoutDate string, createdBy domain.Admin, notes string) (int, error) {
-	slog.Info("Creating checkout", "user_id", user.ID, "created_by", createdBy, "item_count", len(items))
-	start := time.Now()
+func (d *DB) Checkout(ctx context.Context, id int) (*domain.Checkout, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
-	tx, err := d.DB.Begin()
+	selectCols := `c.id, c.checkout_date, c.notes, u.name, u.email, a.name, a.email`
+	builder := NewSafeQueryBuilder(CheckoutsRegistry, selectCols)
+	builder.AddJoin("JOIN users u ON c.user_id = u.id")
+	builder.AddJoin("JOIN users a ON c.created_by = a.id")
+	_, err := builder.Sort("c.checkout_date", Asc)
+	if err != nil {
+		return nil, domain.ErrInvalidSortField
+	}
+
+	query, params := builder.Build()
+	slog.Debug("Checkouts query", "query", query)
+
+	tx, err := d.DB.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	//nolint:errcheck
+	defer tx.Rollback()
+
+	row := tx.QueryRowContext(ctx, query, params...)
+
+	var checkoutID int
+	var checkoutDate time.Time
+	var checkoutNotes sql.NullString
+	var userName, userEmail string
+	var createdByName, createdByEmail string
+
+	err = row.Scan(
+		&checkoutID,
+		&checkoutDate,
+		&checkoutNotes,
+		&userName,
+		&userEmail,
+		&createdByName,
+		&createdByEmail,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	checkout := domain.Checkout{
+		ID: checkoutID,
+		User: domain.User{
+			Name:  userName,
+			Email: userEmail,
+		},
+		CreatedBy: domain.User{
+			Name:  createdByName,
+			Email: createdByEmail,
+		},
+		Notes:        checkoutNotes.String,
+		CheckoutDate: checkoutDate,
+	}
+
+	checkoutItems, err := checkoutItems(ctx, tx, checkoutID)
+	if err != nil {
+		checkout.Items = []domain.CheckoutItem{}
+	} else {
+		checkout.Items = checkoutItems
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &checkout, nil
+}
+
+func (d *DB) CreateCheckout(ctx context.Context, user domain.User, items []string, checkoutDate string, createdBy domain.Admin, notes string) (int, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	tx, err := d.DB.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		slog.Error("Failed to begin transaction", "error", err)
 		return 0, err
@@ -199,35 +250,37 @@ func (d *DB) CreateCheckout(user domain.User, items []string, checkoutDate strin
 	defer tx.Rollback()
 
 	var checkoutID int
-	err = tx.QueryRow(createCheckoutQuery, user.ID, notes, createdBy.User.ID).Scan(&checkoutID)
+	err = tx.QueryRowContext(ctx, createCheckoutQuery, user.ID, notes, createdBy.User.ID).Scan(&checkoutID)
 	if err != nil {
 		slog.Error("Failed to create checkout", "error", err)
 		return 0, err
 	}
 
 	for _, id := range items {
-		if _, err := tx.Exec(addCheckoutItemQuery, checkoutID, id); err != nil {
+		if _, err := tx.ExecContext(ctx, addCheckoutItemQuery, checkoutID, id); err != nil {
 			slog.Error("Failed to add checkout item", "error", err, "checkout_id", checkoutID, "item_id", id)
 			return 0, err
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		slog.Error("Failed to commit checkout transaction", "error", err, "checkout_id", checkoutID)
 		return 0, err
 	}
 
-	slog.Info("Checkout created successfully", "checkout_id", checkoutID, "duration_ms", time.Since(start).Milliseconds())
 	return checkoutID, nil
 }
 
-func (d *DB) UpdateCheckout(checkout *domain.Checkout) error {
-	_, err := d.DB.Exec(updateCheckoutQuery, checkout.Notes, checkout.ID)
+func (d *DB) UpdateCheckout(ctx context.Context, checkout *domain.Checkout) error {
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+	_, err := d.DB.ExecContext(ctx, updateCheckoutQuery, checkout.Notes, checkout.ID)
 	return err
 }
 
-func (d *DB) ReturnItem(checkoutID int, itemID string) error {
-	res, err := d.DB.Exec(returnItemQuery, checkoutID, itemID)
+func (d *DB) ReturnItem(ctx context.Context, checkoutID int, itemID string) error {
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+	res, err := d.DB.ExecContext(ctx, returnItemQuery, checkoutID, itemID)
 	if err != nil {
 		return err
 	}
@@ -241,8 +294,10 @@ func (d *DB) ReturnItem(checkoutID int, itemID string) error {
 	return nil
 }
 
-func (d *DB) ItemsStatus(ids []string) (*[]domain.ItemStatusResponse, error) {
-	tx, err := d.DB.Begin()
+func (d *DB) ItemsStatus(ctx context.Context, ids []string) (*[]domain.ItemStatusResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	tx, err := d.DB.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +310,7 @@ func (d *DB) ItemsStatus(ids []string) (*[]domain.ItemStatusResponse, error) {
 
 	for _, id := range ids {
 		var status bool
-		row := tx.QueryRow(getItemStatusQuery, id)
+		row := tx.QueryRowContext(ctx, getItemStatusQuery, id)
 		err = row.Scan(&status)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -271,8 +326,7 @@ func (d *DB) ItemsStatus(ids []string) (*[]domain.ItemStatusResponse, error) {
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	if invalidID {
