@@ -11,8 +11,10 @@ lint:
 	golangci-lint run
 
 test:
-	go test .
+	go test ./...
+
+testv:
+	go test -v ./...
 
 run: build-web
 	go run cmd/api/main.go
-
