@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { request } from "./client";
 
 export type LoginInfoT = {
   email: string;
@@ -11,7 +12,7 @@ export type LoginResponseT = {
 }
 
 const login = async(loginInfo: LoginInfoT): Promise<LoginResponseT> => {
-  const response = await fetch(
+  const response = await request(
     `${import.meta.env.VITE_API_URL}/auth/login`,
     {
       method: 'POST',
@@ -29,10 +30,13 @@ const login = async(loginInfo: LoginInfoT): Promise<LoginResponseT> => {
 }
 
 const logout = async(): Promise<void> => {
-  await fetch(`${import.meta.env.VITE_API_URL}/auth/logout`, {
+  const response = await request(`${import.meta.env.VITE_API_URL}/auth/logout`, {
     method: 'POST',
     credentials: 'include',
   })
+  if (!response.ok) {
+    throw new Error('Logout failed');
+  }
 }
 
 export const useLogin = () => {

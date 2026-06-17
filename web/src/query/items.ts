@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { request } from "./client";
 
 export type ItemT = {
   id: string;
@@ -27,7 +28,7 @@ const fetchItems = async(filter?: string): Promise<ItemT[]> => {
     requestUrl += `?type=${filter}`;
   }
 
-  const response = await fetch(requestUrl);
+  const response = await request(requestUrl);
   if (!response.ok) {
     throw new Error('Failed to fetch items');
   }
@@ -35,12 +36,16 @@ const fetchItems = async(filter?: string): Promise<ItemT[]> => {
 }
 
 const fetchItem = async(id?: string): Promise<ItemT[]> => {
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/items?id=${id}`);
+  const response = await request(`${import.meta.env.VITE_API_URL}/items?id=${id}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch item');
+  }
   return await response.json() as Promise<ItemT[]>;
 }
 
 const createItem = async(item: ItemT): Promise<ItemT> => {
-  const response = await fetch(
+  if (item.notes?.trim() === '') { item.notes = null }
+  const response = await request(
     `${import.meta.env.VITE_API_URL}/items`, {
       method: 'POST',
       headers: {
@@ -50,18 +55,27 @@ const createItem = async(item: ItemT): Promise<ItemT> => {
       credentials: 'include',
     }
   )
+  if (!response.ok) {
+    throw new Error('Failed to create item');
+  }
   return response.json() as Promise<ItemT>;
 }
 
 const deleteItem = async(id: string): Promise<void> => {
-  await fetch(`${import.meta.env.VITE_API_URL}/items?id=${id}`, {
+  const response = await request(`${import.meta.env.VITE_API_URL}/items?id=${id}`, {
     method: 'DELETE',
     credentials: 'include',
   })
+  if (!response.ok) {
+    throw new Error('Failed to delete item');
+  }
 }
 
 const fetchTypes = async(): Promise<string[]> => {
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/items/types`);
+  const response = await request(`${import.meta.env.VITE_API_URL}/items/types`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch types');
+  }
   return await response.json() as Promise<string[]>;
 }
 
