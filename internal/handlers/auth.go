@@ -51,7 +51,7 @@ func (s *APIHandler) LoginHandler(c *gin.Context) {
 	}
 
 	slog.Info("Login successful", "email", admin.Email, "ip", c.ClientIP())
-	c.SetCookie("token", tokenString, 3600, "/", "localhost", false, true)
+	c.SetCookie("token", tokenString, 3600*24, "/", s.host, false, true)
 	c.JSON(http.StatusOK, gin.H{"login": "success"})
 }
 

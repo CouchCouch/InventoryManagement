@@ -17,7 +17,7 @@ func (s *APIHandler) AuthMiddleware() gin.HandlerFunc {
 		tokenString, err := c.Cookie("token")
 		if err != nil {
 			slog.Warn("Unauthorized access attempt - missing token", "ip", c.ClientIP(), "path", c.Request.URL.Path)
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing token", "message": "Unauthorized"})
 			c.Abort()
 			return
 		}

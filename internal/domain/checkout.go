@@ -20,11 +20,11 @@ type CheckoutItem struct {
 }
 
 type CreateCheckoutRequest struct {
-	UserEmail    string   `json:"user_email"`
-	Items        []string `json:"items"`
-	CheckoutDate string   `json:"checkout_date"`
-	CreatedBy    string   `json:"created_by"`
-	Notes        string   `json:"notes,omitempty"`
+	UserEmail    string    `json:"user_email"`
+	Items        []string  `json:"items"`
+	CheckoutDate time.Time `json:"checkout_date"`
+	CreatedBy    string    `json:"created_by"`
+	Notes        string    `json:"notes,omitempty"`
 }
 
 type CheckoutResponse struct {
@@ -35,4 +35,9 @@ type CheckoutResponse struct {
 	CreatedBy    UserResponse   `json:"created_by"`
 	Notes        string         `json:"notes,omitempty"`
 	Returned     bool           `json:"returned"`
+}
+
+type CheckoutRetunRequest struct {
+	ID int `json:"id"`
+	Items []string `json:"items"`
 }

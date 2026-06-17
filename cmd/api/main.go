@@ -19,7 +19,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const inventoryAPIText = `
+const (
+	inventoryAPIText = `
   _____                      _                              _____ _____
  |_   _|                    | |                       /\   |  __ \_   _|
    | |  _ ____   _____ _ __ | |_ ___  _ __ _   _     /  \  | |__) || |
@@ -29,6 +30,16 @@ const inventoryAPIText = `
                                             __/ |
                                            |___/
 	`
+	dragonBeaverASCII = `
+          -      -
+         ::+  +:+
+         ::: :=:
+       ::--::::
+  #   #=@:====@@=@=
+        =@*@=@===@
+      @%    @%%
+`
+)
 
 func main() {
 	fmt.Println(inventoryAPIText)
@@ -77,7 +88,7 @@ func main() {
 		}
 	}
 
-	handlers.Handle(r, database, authService)
+	handlers.Handle(r, database, authService, conf.API.Host)
 
 	slog.Info("Server starting", "address", conf.API.Addr())
 	err = r.Run(conf.API.Addr())

@@ -53,12 +53,13 @@ const htmlResponse string = `
 type APIHandler struct {
 	db   *db.DB
 	auth *auth.AuthService
+	host string
 }
 
-func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService) {
+func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService, host string) {
 	// r.Use(RequestLoggingMiddleware())
 
-	APIHandlerInstance := &APIHandler{db: db, auth: auth}
+	APIHandlerInstance := &APIHandler{db: db, auth: auth, host: host}
 	api := r.Group("/api")
 	{
 		itemsAPI := api.Group("/items")
@@ -73,7 +74,7 @@ func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService) {
 		{
 			checkoutsAPI.GET("", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.GetCheckoutsHandler)
 			checkoutsAPI.POST("", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.CreateCheckoutHandler)
-			// checkoutsAPI.PUT("", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.ReturnCheckoutHandler)
+			checkoutsAPI.PUT("", APIHandlerInstance.AuthMiddleware(), APIHandlerInstance.ReturnCheckoutHandler)
 			// checkoutsAPI.PATCH("", APIHandlerInstance.AuthMiddleware(), )
 		}
 		authAPI := api.Group("/auth")

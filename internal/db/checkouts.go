@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	createCheckoutQuery  = `INSERT INTO checkouts (user_id, notes, created_by) VALUES ($1, $2, $3) RETURNING id;`
+	createCheckoutQuery  = `INSERT INTO checkouts (user_id, notes, created_by, checkout_date) VALUES ($1, $2, $3, $4) RETURNING id;`
 	addCheckoutItemQuery = `INSERT INTO checkout_items (checkout_id, item_id) VALUES ($1, $2);`
 
 	updateCheckoutQuery = `UPDATE checkouts SET notes = $1 WHERE id = $2;`
@@ -91,6 +91,7 @@ func (d *DB) Checkouts(ctx context.Context) ([]domain.Checkout, error) {
 	for i, checkout := range checkouts {
 		checkoutItems, err := checkoutItems(ctx, tx, checkout.ID)
 		if err != nil {
+			slog.Debug("Error getting checkout items", "err", err)
 			checkouts[i].Items = []domain.CheckoutItem{}
 		} else {
 			checkouts[i].Items = checkoutItems
@@ -101,11 +102,11 @@ func (d *DB) Checkouts(ctx context.Context) ([]domain.Checkout, error) {
 }
 
 func checkoutItems(ctx context.Context, tx *sql.Tx, id int) ([]domain.CheckoutItem, error) {
-	selectCols := `ci.item_id, ci.returnDate, i.name, t.name, i.notes`
+	selectCols := `ci.item_id, ci.return_date, i.name, t.name, i.notes`
 	builder := NewSafeQueryBuilder(CheckoutItemsRegistry, selectCols)
 	builder.AddJoin("JOIN items i ON ci.item_id = i.id")
 	builder.AddJoin("JOIN item_types t ON i.item_type_id = t.id")
-	if _, err := builder.Filter("ci.checkout_id", OpLike, id); err != nil {
+	if _, err := builder.Filter("ci.checkout_id", OpEqual, id); err != nil {
 		return nil, domain.ErrInvalidFilterField
 	}
 	_, err := builder.Sort("ci.item_id", Asc)
@@ -158,10 +159,6 @@ func checkoutItems(ctx context.Context, tx *sql.Tx, id int) ([]domain.CheckoutIt
 		}
 	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
 	return checkoutItems, nil
 }
 
@@ -179,7 +176,6 @@ func (d *DB) Checkout(ctx context.Context, id int) (*domain.Checkout, error) {
 	}
 
 	query, params := builder.Build()
-	slog.Debug("Checkouts query", "query", query)
 
 	tx, err := d.DB.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
@@ -237,7 +233,7 @@ func (d *DB) Checkout(ctx context.Context, id int) (*domain.Checkout, error) {
 	return &checkout, nil
 }
 
-func (d *DB) CreateCheckout(ctx context.Context, user domain.User, items []string, checkoutDate string, createdBy domain.Admin, notes string) (int, error) {
+func (d *DB) CreateCheckout(ctx context.Context, user domain.User, items []string, checkoutDate time.Time, createdBy domain.Admin, notes string) (int, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	tx, err := d.DB.BeginTx(ctx, &sql.TxOptions{})
@@ -250,7 +246,7 @@ func (d *DB) CreateCheckout(ctx context.Context, user domain.User, items []strin
 	defer tx.Rollback()
 
 	var checkoutID int
-	err = tx.QueryRowContext(ctx, createCheckoutQuery, user.ID, notes, createdBy.User.ID).Scan(&checkoutID)
+	err = tx.QueryRowContext(ctx, createCheckoutQuery, user.ID, notes, createdBy.User.ID, checkoutDate).Scan(&checkoutID)
 	if err != nil {
 		slog.Error("Failed to create checkout", "error", err)
 		return 0, err
@@ -277,20 +273,26 @@ func (d *DB) UpdateCheckout(ctx context.Context, checkout *domain.Checkout) erro
 	return err
 }
 
-func (d *DB) ReturnItem(ctx context.Context, checkoutID int, itemID string) error {
+func (d *DB) ReturnItem(ctx context.Context, checkoutID int, items []string) error {
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
-	res, err := d.DB.ExecContext(ctx, returnItemQuery, checkoutID, itemID)
+	tx, err := d.DB.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return err
 	}
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
+	//nolint:errcheck
+	defer tx.Rollback()
+
+	for _, itemID := range(items) {
+		if _, err := tx.ExecContext(ctx, returnItemQuery, checkoutID, itemID); err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
 		return err
 	}
-	if rowsAffected == 0 {
-		return sql.ErrNoRows // Or a custom error like "item already returned or not found"
-	}
+
 	return nil
 }
 
