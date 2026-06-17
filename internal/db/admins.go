@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -170,8 +169,6 @@ func (d *DB) Login(ctx context.Context, admin domain.AdminLoginRequest) error {
 		return err
 	}
 
-	slog.Debug("Result", "PHC", storedPHC)
-
 	PHCData, err := parsePHC(storedPHC)
 	if err != nil {
 		return err
@@ -185,8 +182,6 @@ func (d *DB) Login(ctx context.Context, admin domain.AdminLoginRequest) error {
 		PHCData.Parallelism,
 		uint32(len(PHCData.Hash)),
 		)
-
-	slog.Debug("Hashes", "Hash", hashedPassword, "Stored", PHCData.Hash)
 
 	if subtle.ConstantTimeCompare(hashedPassword, PHCData.Hash) == 1 {
 		return nil

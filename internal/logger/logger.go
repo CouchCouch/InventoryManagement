@@ -39,7 +39,6 @@ func Initialize(logLevel string, isDevelopment bool) *slog.Logger {
 			Level(zerologLevel).
 			With().
 			Timestamp().
-			Caller().
 			Logger()
 	}
 

@@ -209,7 +209,7 @@ func (qb *QueryBuilder) Build() (string, []any) {
 
 	// Add LIMIT clause
 	if qb.limit > 0 {
-		fmt.Fprintf(&query, " LIMIT %d", qb.offset)
+		fmt.Fprintf(&query, " LIMIT %d", qb.limit)
 	}
 
 	// Add OFFSET clause

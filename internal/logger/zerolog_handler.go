@@ -2,7 +2,9 @@ package logger
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"runtime"
 
 	"github.com/rs/zerolog"
 )
@@ -64,6 +66,12 @@ func (h *ZerologHandler) Handle(ctx context.Context, record slog.Record) error {
 		h.addAttr(event, attr, h.groups)
 		return true
 	})
+
+	if record.PC != 0 {
+		frames := runtime.CallersFrames([]uintptr{record.PC})
+		frame, _ := frames.Next()
+		event.Str("caller", fmt.Sprintf("%s:%d", frame.File, frame.Line))
+	}
 
 	event.Msg(record.Message)
 	return nil
