@@ -62,13 +62,6 @@ func (s *APIHandler) AddItemHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if item.DatePurchased != "" {
-		if _, err := time.Parse("02-01-2006", item.DatePurchased); err != nil {
-			slog.Error("Failed to parse time", "error", err, "date", item.DatePurchased)
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-	}
 	err = s.db.AddItem(ctx, &item)
 	if err != nil {
 		if errors.Is(err, domain.ErrItemAlreadyExists) {
