@@ -10,18 +10,20 @@ export const Root = () => {
   return (
     <TooltipProvider>
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <header>
-          <Link to="/"><h1>RITOC Inventory</h1></Link>
-          <div className="absolute left-2" >
-            <ModeToggle />
-          </div>
-          <div className="absolute right-2" >
-            <UserInfo />
-          </div>
-        </header>
-        <Outlet />
-        <ReactQueryDevtools buttonPosition="bottom-right" />
-        <TanStackRouterDevtools position="bottom-right" />
+        <div className="flex flex-col h-screen">
+          <header>
+            <Link to="/"><h1>RITOC Inventory</h1></Link>
+            <div className="absolute left-2" >
+              <ModeToggle />
+            </div>
+            <div className="absolute right-2" >
+              <UserInfo />
+            </div>
+          </header>
+          <Outlet />
+        </div>
+        <ReactQueryDevtools buttonPosition="bottom-left" />
+        <TanStackRouterDevtools position="bottom-left" />
       </ThemeProvider>
     </TooltipProvider>
   )
