@@ -1,0 +1,26 @@
+# Copy this file to config.yaml and fill in your values.
+# config.yaml is gitignored, so your secrets stay local.
+
+mode: dev               # "dev" or "production" — controls log format (console vs JSON)
+log_level: debug        # debug | info | warn | error
+
+api:
+  host: localhost
+  port: 3000
+
+postgres:
+  host: localhost
+  port: 5432
+  database: inventory_management
+  user: postgres
+  password: changeme
+
+admin:
+  name: admin
+  email: admin@example.com
+  password: changeme
+  role: "President"     # Must match one of the eboard_position enum values
+
+auth:
+  jwt_secret: ""             # Generate with: openssl rand -base64 64
+  jwt_refresh_secret: ""     # Generate with: openssl rand -base64 64
