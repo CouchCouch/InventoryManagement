@@ -27,7 +27,7 @@ type parsedHash struct {
 
 const (
 	argon2idPHCStringFormat = "$argon2id$%s9$m=%d,t=%d,p=%d$%s$%s"
-	argon2idVersion = "v=19"
+	argon2idVersion         = "v=19"
 
 	disableAdminByRoleQuery = `UPDATE admins SET active = FALSE WHERE role = $1;`
 
@@ -60,7 +60,9 @@ const (
 
 func generatePHC(password string, time, memory uint32, threads uint8, saltLen, keyLen uint32) (string, error) {
 	salt := make([]byte, saltLen)
-	if _, err := rand.Read(salt); err != nil { return "", err }
+	if _, err := rand.Read(salt); err != nil {
+		return "", err
+	}
 	hash := argon2.IDKey([]byte(password), salt, time, memory, threads, keyLen)
 	b64Salt := base64.RawStdEncoding.EncodeToString(salt)
 	b64Hash := base64.RawStdEncoding.EncodeToString(hash)
@@ -181,7 +183,7 @@ func (d *DB) Login(ctx context.Context, admin domain.AdminLoginRequest) error {
 		PHCData.Memory,
 		PHCData.Parallelism,
 		uint32(len(PHCData.Hash)),
-		)
+	)
 
 	if subtle.ConstantTimeCompare(hashedPassword, PHCData.Hash) == 1 {
 		return nil

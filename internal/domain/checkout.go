@@ -38,6 +38,6 @@ type CheckoutResponse struct {
 }
 
 type CheckoutRetunRequest struct {
-	ID int `json:"id"`
+	ID    int      `json:"id"`
 	Items []string `json:"items"`
 }

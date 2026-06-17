@@ -283,7 +283,7 @@ func (d *DB) ReturnItem(ctx context.Context, checkoutID int, items []string) err
 	//nolint:errcheck
 	defer tx.Rollback()
 
-	for _, itemID := range(items) {
+	for _, itemID := range items {
 		if _, err := tx.ExecContext(ctx, returnItemQuery, checkoutID, itemID); err != nil {
 			return err
 		}

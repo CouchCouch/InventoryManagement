@@ -21,7 +21,7 @@ jobs:
       run: go install mvdan.cc/gofumpt@latest
 
     - name: Check formatting (gofumpt)
-      run: test -z $(gofumpt -l .)
+      run: gofumpt -l .
 
     - name: Lint (golangci-lint)
       uses: golangci/golangci-lint-action@v6

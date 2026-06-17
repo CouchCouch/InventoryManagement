@@ -52,11 +52,11 @@ func (s *APIHandler) GetCheckoutsHandler(c *gin.Context) {
 			Notes: c.Notes,
 		}
 		checkoutItems := make([]domain.CheckoutItem, 0, len(c.Items))
-		for _, i := range(c.Items) {
+		for _, i := range c.Items {
 			checkoutItems = append(checkoutItems, domain.CheckoutItem{
 				Item: domain.Item{
-					ID: i.Item.ID,
-					Name: i.Item.Name,
+					ID:    i.Item.ID,
+					Name:  i.Item.Name,
 					Notes: i.Item.Notes,
 				},
 				ReturnDate: i.ReturnDate,
