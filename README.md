@@ -119,8 +119,9 @@ make build
 
 ### Checkout Functionality
 - [x] Checkout
-- [x] Return
+- [ ] Return (frontend non-functional)
 - [x] View all checked out items
+- [ ] Frontend shows checked-out status on items
 
 ### Other
 - [ ] Search inventory

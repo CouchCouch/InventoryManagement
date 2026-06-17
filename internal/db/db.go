@@ -32,7 +32,7 @@ const (
 	CREATE TABLE IF NOT EXISTS admins (
 		user_id UUID REFERENCES users(id) PRIMARY KEY,
 		role eboard_position NOT NULL,
-		password_hash VARCHAR(32),
+		password_hash TEXT,
 		active BOOLEAN NOT NULL DEFAULT TRUE
 	);
 
