@@ -10,9 +10,15 @@ import (
 )
 
 const (
-	configFilePath = "config.yaml"
-	pgConfigStr    = "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
+	pgConfigStr = "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
 )
+
+func configPath() string {
+	if p := os.Getenv("CONFIG_PATH"); p != "" {
+		return p
+	}
+	return "config.yaml"
+}
 
 type PGConfig struct {
 	Host     string `yaml:"host"`
@@ -48,7 +54,7 @@ type Config struct {
 }
 
 func GetConfig() (*Config, error) {
-	dbConfFile, err := os.ReadFile(configFilePath)
+	dbConfFile, err := os.ReadFile(configPath())
 	if err != nil {
 		return nil, err
 	}
