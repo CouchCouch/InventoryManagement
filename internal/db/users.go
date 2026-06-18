@@ -71,7 +71,7 @@ func (d *DB) Users(ctx context.Context) (*[]domain.User, error) {
 }
 
 // User retrieves a user by their ID
-func (d *DB) User(ctx context.Context, id int) (*domain.User, error) {
+func (d *DB) User(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
