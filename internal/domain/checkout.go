@@ -12,6 +12,7 @@ type Checkout struct {
 	CreatedBy    User
 	Notes        string
 	Returned     bool
+	Personal     bool
 }
 
 type CheckoutItem struct {
@@ -25,6 +26,7 @@ type CreateCheckoutRequest struct {
 	CheckoutDate time.Time `json:"checkout_date"`
 	CreatedBy    string    `json:"created_by"`
 	Notes        string    `json:"notes,omitempty"`
+	Personal     bool      `json:"personal"`
 }
 
 type CheckoutResponse struct {
@@ -35,6 +37,7 @@ type CheckoutResponse struct {
 	CreatedBy    UserResponse   `json:"created_by"`
 	Notes        string         `json:"notes,omitempty"`
 	Returned     bool           `json:"returned"`
+	Personal     bool           `json:"personal"`
 }
 
 type CheckoutReturnRequest struct {

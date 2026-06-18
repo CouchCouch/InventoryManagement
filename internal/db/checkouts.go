@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	createCheckoutQuery  = `INSERT INTO checkouts (user_id, notes, created_by, checkout_date) VALUES ($1, $2, $3, $4) RETURNING id;`
+	createCheckoutQuery  = `INSERT INTO checkouts (user_id, notes, created_by, checkout_date, personal) VALUES ($1, $2, $3, $4, $5) RETURNING id;`
 	addCheckoutItemQuery = `INSERT INTO checkout_items (checkout_id, item_id) VALUES ($1, $2);`
 
 	updateCheckoutQuery = `UPDATE checkouts SET notes = $1 WHERE id = $2;`
@@ -30,7 +30,7 @@ func (d *DB) Checkouts(ctx context.Context) ([]domain.Checkout, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	selectCols := `c.id, c.checkout_date, c.notes, u.name, u.email, a.name, a.email`
+	selectCols := `c.id, c.checkout_date, c.notes, c.personal, u.name, u.email, a.name, a.email`
 	builder := NewSafeQueryBuilder(CheckoutsRegistry, selectCols)
 	builder.AddJoin("JOIN users u ON c.user_id = u.id")
 	builder.AddJoin("JOIN users a ON c.created_by = a.id")
@@ -58,6 +58,7 @@ func (d *DB) Checkouts(ctx context.Context) ([]domain.Checkout, error) {
 		var checkoutID int
 		var checkoutDate time.Time
 		var checkoutNotes sql.NullString
+		var checkoutPersonal bool
 		var userName, userEmail string
 		var createdByName, createdByEmail string
 
@@ -65,6 +66,7 @@ func (d *DB) Checkouts(ctx context.Context) ([]domain.Checkout, error) {
 			&checkoutID,
 			&checkoutDate,
 			&checkoutNotes,
+			&checkoutPersonal,
 			&userName,
 			&userEmail,
 			&createdByName,
@@ -85,6 +87,7 @@ func (d *DB) Checkouts(ctx context.Context) ([]domain.Checkout, error) {
 			},
 			Notes:        checkoutNotes.String,
 			CheckoutDate: checkoutDate,
+			Personal:     checkoutPersonal,
 		})
 	}
 
@@ -256,7 +259,7 @@ func (d *DB) Checkout(ctx context.Context, id int) (*domain.Checkout, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	selectCols := `c.id, c.checkout_date, c.notes, u.name, u.email, a.name, a.email`
+	selectCols := `c.id, c.checkout_date, c.notes, c.personal, u.name, u.email, a.name, a.email`
 	builder := NewSafeQueryBuilder(CheckoutsRegistry, selectCols)
 	builder.AddJoin("JOIN users u ON c.user_id = u.id")
 	builder.AddJoin("JOIN users a ON c.created_by = a.id")
@@ -282,6 +285,7 @@ func (d *DB) Checkout(ctx context.Context, id int) (*domain.Checkout, error) {
 	var checkoutID int
 	var checkoutDate time.Time
 	var checkoutNotes sql.NullString
+	var checkoutPersonal bool
 	var userName, userEmail string
 	var createdByName, createdByEmail string
 
@@ -289,6 +293,7 @@ func (d *DB) Checkout(ctx context.Context, id int) (*domain.Checkout, error) {
 		&checkoutID,
 		&checkoutDate,
 		&checkoutNotes,
+		&checkoutPersonal,
 		&userName,
 		&userEmail,
 		&createdByName,
@@ -310,6 +315,7 @@ func (d *DB) Checkout(ctx context.Context, id int) (*domain.Checkout, error) {
 		},
 		Notes:        checkoutNotes.String,
 		CheckoutDate: checkoutDate,
+		Personal:     checkoutPersonal,
 	}
 
 	checkoutItems, err := checkoutItems(ctx, tx, checkoutID)
@@ -326,7 +332,7 @@ func (d *DB) Checkout(ctx context.Context, id int) (*domain.Checkout, error) {
 	return &checkout, nil
 }
 
-func (d *DB) CreateCheckout(ctx context.Context, user domain.User, items []string, checkoutDate time.Time, createdBy domain.Admin, notes string) (int, error) {
+func (d *DB) CreateCheckout(ctx context.Context, user domain.User, items []string, checkoutDate time.Time, createdBy domain.Admin, notes string, personal bool) (int, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	tx, err := d.DB.BeginTx(ctx, &sql.TxOptions{})
@@ -339,7 +345,7 @@ func (d *DB) CreateCheckout(ctx context.Context, user domain.User, items []strin
 	defer tx.Rollback()
 
 	var checkoutID int
-	err = tx.QueryRowContext(ctx, createCheckoutQuery, user.ID, notes, createdBy.User.ID, checkoutDate).Scan(&checkoutID)
+	err = tx.QueryRowContext(ctx, createCheckoutQuery, user.ID, notes, createdBy.User.ID, checkoutDate, personal).Scan(&checkoutID)
 	if err != nil {
 		slog.Error("Failed to create checkout", "error", err)
 		return 0, err

@@ -47,8 +47,7 @@ const (
 
 	CREATE TABLE IF NOT EXISTS item_types (
 		id SERIAL PRIMARY KEY,
-		name VARCHAR(50) NOT NULL UNIQUE,
-		parent_id INTEGER DEFAULT NULL
+		name VARCHAR(50) NOT NULL UNIQUE
 	);
 
 	CREATE TABLE IF NOT EXISTS items (
@@ -78,7 +77,7 @@ const (
 	getSchemaVersion    = `SELECT version FROM schema_version`
 	updateSchemaVersion = `UPDATE schema_version SET version = $1`
 
-	schemaVersion = 4
+	schemaVersion = 5
 )
 
 var migrations = []string{
@@ -89,6 +88,7 @@ var migrations = []string{
 	ALTER TABLE users RENAME COLUMN last_name TO name;
 	`,
 	`DROP TABLE session`,
+	`ALTER TABLE item_types DROP COLUMN IF EXISTS parent_id`,
 }
 
 type DB struct {

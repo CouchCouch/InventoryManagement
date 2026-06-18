@@ -49,7 +49,8 @@ func (s *APIHandler) GetCheckoutsHandler(c *gin.Context) {
 				Name:  c.CreatedBy.Name,
 				Email: c.CreatedBy.Email,
 			},
-			Notes: c.Notes,
+			Notes:    c.Notes,
+			Personal: c.Personal,
 		}
 		checkoutItems := make([]domain.CheckoutItem, 0, len(c.Items))
 		for _, i := range c.Items {
@@ -101,7 +102,7 @@ func (s *APIHandler) CreateCheckoutHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	checkoutID, err := s.db.CreateCheckout(ctx, *user, checkout.Items, checkout.CheckoutDate, *admin, checkout.Notes)
+	checkoutID, err := s.db.CreateCheckout(ctx, *user, checkout.Items, checkout.CheckoutDate, *admin, checkout.Notes, checkout.Personal)
 	if err != nil {
 		slog.Error("Failed to create checkout", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
