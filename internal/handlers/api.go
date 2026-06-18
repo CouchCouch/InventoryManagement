@@ -54,12 +54,13 @@ type APIHandler struct {
 	db   *db.DB
 	auth *auth.AuthService
 	host string
+	isDev bool
 }
 
-func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService, host string) {
+func Handle(r *gin.Engine, db *db.DB, auth *auth.AuthService, host string, isDev bool) {
 	// r.Use(RequestLoggingMiddleware())
 
-	APIHandlerInstance := &APIHandler{db: db, auth: auth, host: host}
+	APIHandlerInstance := &APIHandler{db: db, auth: auth, host: host, isDev: isDev}
 	api := r.Group("/api")
 	{
 		itemsAPI := api.Group("/items")

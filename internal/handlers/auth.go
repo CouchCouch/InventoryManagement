@@ -51,11 +51,11 @@ func (s *APIHandler) LoginHandler(c *gin.Context) {
 	}
 
 	slog.Info("Login successful", "email", admin.Email, "ip", c.ClientIP())
-	c.SetCookie("token", tokenString, 3600*24, "/", s.host, false, true)
+	c.SetCookie("token", tokenString, 3600*24, "/", s.host, !s.isDev, true)
 	c.JSON(http.StatusOK, gin.H{"login": "success"})
 }
 
 func (s *APIHandler) LogoutHandler(c *gin.Context) {
-	c.SetCookie("token", "", -1, "/", "localhost", false, true)
+	c.SetCookie("token", "", -1, "/", s.host, false, true)
 	c.JSON(http.StatusOK, gin.H{})
 }

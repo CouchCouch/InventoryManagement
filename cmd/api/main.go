@@ -88,7 +88,7 @@ func main() {
 		}
 	}
 
-	handlers.Handle(r, database, authService, conf.API.Host)
+	handlers.Handle(r, database, authService, conf.API.Host, isDev)
 
 	slog.Info("Server starting", "address", conf.API.Addr())
 	err = r.Run(conf.API.Addr())
