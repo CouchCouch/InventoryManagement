@@ -23,4 +23,3 @@ admin:
 
 auth:
   jwt_secret: ""             # Generate with: openssl rand -base64 64
-  jwt_refresh_secret: ""     # Generate with: openssl rand -base64 64

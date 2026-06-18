@@ -35,8 +35,7 @@ type AdminConfig struct {
 }
 
 type AuthConfig struct {
-	JWTSecret         string `yaml:"jwt_secret"`
-	JWTRrefreshSecret string `yaml:"jwt_refresh_secret"`
+	JWTSecret string `yaml:"jwt_secret"`
 }
 
 type Config struct {

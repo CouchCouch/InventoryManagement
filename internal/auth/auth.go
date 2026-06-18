@@ -10,28 +10,16 @@ import (
 )
 
 type AuthService struct {
-	jwtSecret        string
-	jwtRefreshSecret string
+	jwtSecret string
 }
 
-func NewAuthService(jwtSecret, jwtRefreshSecret string) *AuthService {
+func NewAuthService(jwtSecret string) *AuthService {
 	return &AuthService{
-		jwtSecret:        jwtSecret,
-		jwtRefreshSecret: jwtRefreshSecret,
+		jwtSecret: jwtSecret,
 	}
 }
 
 func (s *AuthService) GenerateAccessToken(email string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, domain.Claims{
-		Email: email,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Local().Add(24 * time.Hour)),
-		},
-	})
-	return token.SignedString([]byte(s.jwtSecret))
-}
-
-func (s *AuthService) GenerateRefreshToken(email string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, domain.Claims{
 		Email: email,
 		RegisteredClaims: jwt.RegisteredClaims{

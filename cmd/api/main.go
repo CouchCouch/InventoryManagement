@@ -70,7 +70,7 @@ func main() {
 	}
 	r.Use(cors.New(corsConfig))
 
-	authService := auth.NewAuthService(conf.Auth.JWTSecret, conf.Auth.JWTRrefreshSecret)
+	authService := auth.NewAuthService(conf.Auth.JWTSecret)
 	ctx := context.Background()
 	database, err := db.NewDBWithSchema(ctx, conf.DB)
 	if err != nil {
