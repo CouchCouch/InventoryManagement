@@ -88,17 +88,92 @@ func (d *DB) Checkouts(ctx context.Context) ([]domain.Checkout, error) {
 		})
 	}
 
-	for i, checkout := range checkouts {
-		checkoutItems, err := checkoutItems(ctx, tx, checkout.ID)
-		if err != nil {
-			slog.Debug("Error getting checkout items", "err", err)
-			checkouts[i].Items = []domain.CheckoutItem{}
+	ids := make([]int, len(checkouts))
+	for i, c := range checkouts {
+		ids[i] = c.ID
+	}
+
+	itemsByID, err := checkoutItemsByCheckoutIDs(ctx, tx, ids)
+	if err != nil {
+		slog.Debug("Error getting checkout items", "err", err)
+	}
+	for i := range checkouts {
+		if items, ok := itemsByID[checkouts[i].ID]; ok {
+			checkouts[i].Items = items
 		} else {
-			checkouts[i].Items = checkoutItems
+			checkouts[i].Items = []domain.CheckoutItem{}
 		}
 	}
 
 	return checkouts, nil
+}
+
+func checkoutItemsByCheckoutIDs(ctx context.Context, tx *sql.Tx, ids []int) (map[int][]domain.CheckoutItem, error) {
+	if len(ids) == 0 {
+		return map[int][]domain.CheckoutItem{}, nil
+	}
+
+	selectCols := `ci.checkout_id, ci.item_id, ci.return_date, i.name, t.name, i.notes`
+	builder := NewSafeQueryBuilder(CheckoutItemsRegistry, selectCols)
+	builder.AddJoin("JOIN items i ON ci.item_id = i.id")
+	builder.AddJoin("JOIN item_types t ON i.item_type_id = t.id")
+
+	idParams := make([]any, len(ids))
+	for i, id := range ids {
+		idParams[i] = id
+	}
+	if _, err := builder.Filter("ci.checkout_id", OpIn, idParams); err != nil {
+		return nil, err
+	}
+	if _, err := builder.Sort("ci.item_id", Asc); err != nil {
+		return nil, domain.ErrInvalidSortField
+	}
+
+	query, params := builder.Build()
+
+	rows, err := tx.QueryContext(ctx, query, params...)
+	if err != nil {
+		return nil, err
+	}
+
+	//nolint:errcheck
+	defer rows.Close()
+
+	itemsByID := make(map[int][]domain.CheckoutItem)
+	for rows.Next() {
+		var checkoutID int
+		var itemID, itemName, itemType string
+		var notes sql.NullString
+		var returnDate sql.NullTime
+
+		err := rows.Scan(
+			&checkoutID,
+			&itemID,
+			&returnDate,
+			&itemName,
+			&itemType,
+			&notes,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		item := domain.CheckoutItem{
+			Item: domain.Item{
+				ID:   itemID,
+				Name: itemName,
+				Type: itemType,
+			},
+			ReturnDate: returnDate.Time,
+		}
+		if notes.Valid {
+			item.Item.Notes = notes.String
+		}
+
+		itemsByID[checkoutID] = append(itemsByID[checkoutID], item)
+	}
+
+	return itemsByID, nil
 }
 
 func checkoutItems(ctx context.Context, tx *sql.Tx, id int) ([]domain.CheckoutItem, error) {
