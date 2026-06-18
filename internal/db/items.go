@@ -104,7 +104,9 @@ func (d *DB) ItemsByIDs(ctx context.Context, ids []string) (*[]domain.Item, erro
 	for i, id := range ids {
 		idParams[i] = id
 	}
-	builder.builder.Filter("i.id", OpIn, idParams)
+	if _, err := builder.Filter("i.id", OpIn, idParams); err != nil {
+		return nil, domain.ErrInvalidFilterField
+	}
 	if _, err := builder.Sort("i.date_purchased", Desc); err != nil {
 		return nil, domain.ErrInvalidSortField
 	}
@@ -165,7 +167,9 @@ func (d *DB) Item(ctx context.Context, id string) (*domain.Item, error) {
 	selectCols := `i.id, i.name, t.name, i.notes, i.date_purchased`
 	builder := NewSafeQueryBuilder(ItemsRegistry, selectCols)
 	builder.AddJoin("LEFT JOIN item_types t ON i.item_type_id = t.id")
-	builder.builder.Filter("i.id", OpEqual, id)
+	if _, err := builder.Filter("i.id", OpEqual, id); err != nil {
+		return nil, domain.ErrInvalidFilterField
+	}
 
 	query, params := builder.Build()
 	row := d.DB.QueryRowContext(ctx, query, params...)
@@ -295,17 +299,13 @@ func (d *DB) GetItemsWithBuilder(ctx context.Context, typeParam, nameParam, sort
 
 	// Apply filters
 	if typeParam != "" {
-		var err error
-		builder, err = builder.Filter("t.name", OpEqual, typeParam)
-		if err != nil {
+		if _, err := builder.Filter("t.name", OpEqual, typeParam); err != nil {
 			return nil, err
 		}
 	}
 
 	if nameParam != "" {
-		var err error
-		builder, err = builder.Filter("i.name", OpLike, "%"+nameParam+"%")
-		if err != nil {
+		if _, err := builder.Filter("i.name", OpLike, "%"+nameParam+"%"); err != nil {
 			return nil, err
 		}
 	}
@@ -342,9 +342,7 @@ func (d *DB) GetItemsWithBuilder(ctx context.Context, typeParam, nameParam, sort
 		}
 	}
 
-	var err error
-	builder, err = builder.Sort(sortField, sortDir)
-	if err != nil {
+	if _, err := builder.Sort(sortField, sortDir); err != nil {
 		return nil, domain.ErrInvalidSortField
 	}
 

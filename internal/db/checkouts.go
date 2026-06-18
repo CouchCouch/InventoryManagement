@@ -260,12 +260,11 @@ func (d *DB) Checkout(ctx context.Context, id int) (*domain.Checkout, error) {
 	builder := NewSafeQueryBuilder(CheckoutsRegistry, selectCols)
 	builder.AddJoin("JOIN users u ON c.user_id = u.id")
 	builder.AddJoin("JOIN users a ON c.created_by = a.id")
-	_, err := builder.Sort("c.checkout_date", Asc)
-	if err != nil {
+	if _, err := builder.Sort("c.checkout_date", Asc); err != nil {
 		return nil, domain.ErrInvalidSortField
 	}
 
-	if _, err = builder.Filter("c.id", OpEqual, id); err != nil {
+	if _, err := builder.Filter("c.id", OpEqual, id); err != nil {
 		return nil, err
 	}
 
