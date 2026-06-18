@@ -5,10 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"inventory/internal/domain"
-
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
@@ -22,21 +19,16 @@ func (s *APIHandler) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		token, _ := jwt.ParseWithClaims(tokenString, &domain.Claims{}, func(token *jwt.Token) (any, error) {
-			return []byte(s.auth.JWTSecret), nil
-		})
-
-		if token.Valid {
-			// Store email from token for logging
-			if claims, ok := token.Claims.(*domain.Claims); ok {
-				c.Set("user_email", claims.Email)
-			}
-			c.Next()
-		} else {
+		email, err := s.auth.ValidateToken(tokenString)
+		if err != nil {
 			slog.Warn("Invalid token attempt", "ip", c.ClientIP(), "path", c.Request.URL.Path)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
+			return
 		}
+
+		c.Set("user_email", email)
+		c.Next()
 	}
 }
 
