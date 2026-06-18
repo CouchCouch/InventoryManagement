@@ -50,8 +50,11 @@ func (d *DB) Items(ctx context.Context) (*[]domain.Item, error) {
 		return nil, err
 	}
 
-	//nolint:errcheck
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	items := make([]domain.Item, 0)
 	for rows.Next() {
@@ -77,6 +80,9 @@ func (d *DB) Items(ctx context.Context) (*[]domain.Item, error) {
 				Notes: notes,
 			})
 		}
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 	return &items, nil
 }
@@ -111,8 +117,11 @@ func (d *DB) ItemsByIDs(ctx context.Context, ids []string) (*[]domain.Item, erro
 		return nil, err
 	}
 
-	//nolint:errcheck
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	items := make([]domain.Item, 0, len(ids))
 	for rows.Next() {
@@ -138,6 +147,9 @@ func (d *DB) ItemsByIDs(ctx context.Context, ids []string) (*[]domain.Item, erro
 				Notes: notes,
 			})
 		}
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return &items, nil
@@ -207,8 +219,11 @@ func (d *DB) ItemsByType(ctx context.Context, typeFilter string) (*[]domain.Item
 		return nil, err
 	}
 
-	//nolint:errcheck
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	items := make([]domain.Item, 0)
 	for rows.Next() {
@@ -235,6 +250,9 @@ func (d *DB) ItemsByType(ctx context.Context, typeFilter string) (*[]domain.Item
 			})
 		}
 	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
 	return &items, nil
 }
 
@@ -246,8 +264,11 @@ func (d *DB) ItemTypes(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	//nolint:errcheck
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	var itemTypes []string
 	for rows.Next() {
@@ -351,8 +372,11 @@ func (d *DB) GetItemsWithBuilder(ctx context.Context, typeParam, nameParam, sort
 		return nil, err
 	}
 
-	//nolint:errcheck
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	items := make([]domain.Item, 0)
 	for rows.Next() {
@@ -375,6 +399,9 @@ func (d *DB) GetItemsWithBuilder(ctx context.Context, typeParam, nameParam, sort
 		}
 
 		items = append(items, item)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return &items, nil

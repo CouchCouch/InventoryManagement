@@ -136,8 +136,11 @@ func checkoutItemsByCheckoutIDs(ctx context.Context, tx *sql.Tx, ids []int) (map
 		return nil, err
 	}
 
-	//nolint:errcheck
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	itemsByID := make(map[int][]domain.CheckoutItem)
 	for rows.Next() {
@@ -172,6 +175,9 @@ func checkoutItemsByCheckoutIDs(ctx context.Context, tx *sql.Tx, ids []int) (map
 
 		itemsByID[checkoutID] = append(itemsByID[checkoutID], item)
 	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return itemsByID, nil
 }
@@ -194,6 +200,12 @@ func checkoutItems(ctx context.Context, tx *sql.Tx, id int) ([]domain.CheckoutIt
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	checkoutItems := []domain.CheckoutItem{}
 	for rows.Next() {
@@ -232,6 +244,9 @@ func checkoutItems(ctx context.Context, tx *sql.Tx, id int) ([]domain.CheckoutIt
 				ReturnDate: returnDate.Time,
 			})
 		}
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return checkoutItems, nil

@@ -53,8 +53,11 @@ func (d *DB) Users(ctx context.Context) (*[]domain.User, error) {
 		return nil, err
 	}
 
-	//nolint:errcheck
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	var users []domain.User
 	for rows.Next() {
