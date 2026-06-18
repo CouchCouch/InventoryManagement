@@ -17,7 +17,7 @@ func (s *APIHandler) LoginHandler(c *gin.Context) {
 	defer cancel()
 
 	var admin domain.AdminLoginRequest
-	err := c.ShouldBindBodyWithJSON(&admin)
+	err := c.ShouldBindJSON(&admin)
 	if err != nil {
 		slog.Warn("Login request with invalid JSON", "ip", c.ClientIP(), "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"login": "fail"})

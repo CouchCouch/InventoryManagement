@@ -50,7 +50,7 @@ func (s *APIHandler) CreateUserHandler(c *gin.Context) {
 	defer cancel()
 
 	var user domain.User
-	err := c.ShouldBindBodyWithJSON(&user)
+	err := c.ShouldBindJSON(&user)
 	if err != nil {
 		slog.Warn("Invalid request body for user creation", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})

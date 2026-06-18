@@ -70,7 +70,7 @@ func (d *DB) Items(ctx context.Context) (*[]domain.Item, error) {
 				Name:          name,
 				Type:          itemType,
 				Notes:         notes,
-				DatePurchased: datePurchased.Time.Format("02-01-2006"),
+				DatePurchased: datePurchased.Time.Format("2006-01-02"),
 			})
 		} else {
 			items = append(items, domain.Item{
@@ -139,7 +139,7 @@ func (d *DB) ItemsByIDs(ctx context.Context, ids []string) (*[]domain.Item, erro
 				Name:          name,
 				Type:          itemType,
 				Notes:         notes,
-				DatePurchased: datePurchased.Time.Format("02-01-2006"),
+				DatePurchased: datePurchased.Time.Format("2006-01-02"),
 			})
 		} else {
 			items = append(items, domain.Item{
@@ -187,7 +187,7 @@ func (d *DB) Item(ctx context.Context, id string) (*domain.Item, error) {
 			Name:          name,
 			Type:          itemType,
 			Notes:         notes,
-			DatePurchased: datePurchased.Time.Format("02-01-2006"),
+			DatePurchased: datePurchased.Time.Format("2006-01-02"),
 		}
 	} else {
 		item = &domain.Item{
@@ -243,7 +243,7 @@ func (d *DB) ItemsByType(ctx context.Context, typeFilter string) (*[]domain.Item
 				Name:          name,
 				Type:          itemType,
 				Notes:         notes,
-				DatePurchased: datePurchased.Time.Format("02-01-2006"),
+				DatePurchased: datePurchased.Time.Format("2006-01-02"),
 			})
 		} else {
 			items = append(items, domain.Item{
@@ -393,7 +393,7 @@ func (d *DB) GetItemsWithBuilder(ctx context.Context, typeParam, nameParam, sort
 		}
 
 		if datePurchased.Valid {
-			item.DatePurchased = datePurchased.Time.Format("02-01-2006")
+			item.DatePurchased = datePurchased.Time.Format("2006-01-02")
 		}
 
 		items = append(items, item)
@@ -457,7 +457,7 @@ func (d *DB) AddItem(ctx context.Context, item *domain.Item) error {
 	}
 	date := sql.NullTime{}
 	if item.DatePurchased != "" {
-		date.Time, err = time.Parse("02-01-2006", item.DatePurchased)
+		date.Time, err = time.Parse("2006-01-02", item.DatePurchased)
 		if err != nil {
 			date = sql.NullTime{Valid: false}
 		}

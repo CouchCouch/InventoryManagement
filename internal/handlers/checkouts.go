@@ -114,8 +114,8 @@ func (s *APIHandler) ReturnCheckoutHandler(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	checkoutReturn := domain.CheckoutRetunRequest{}
-	err := c.ShouldBindBodyWithJSON(&checkoutReturn)
+	checkoutReturn := domain.CheckoutReturnRequest{}
+	err := c.ShouldBindJSON(&checkoutReturn)
 	if err != nil {
 		slog.Error("Failed to deserialize json", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{})

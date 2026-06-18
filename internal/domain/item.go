@@ -10,6 +10,6 @@ type Item struct {
 }
 
 type ItemStatusResponse struct {
-	ID         string `json:"ID"`
+	ID         string `json:"id"`
 	CheckedOut bool   `json:"checked_out"`
 }

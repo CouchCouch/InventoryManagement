@@ -37,7 +37,7 @@ type CheckoutResponse struct {
 	Returned     bool           `json:"returned"`
 }
 
-type CheckoutRetunRequest struct {
+type CheckoutReturnRequest struct {
 	ID    int      `json:"id"`
 	Items []string `json:"items"`
 }
