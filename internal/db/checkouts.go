@@ -19,10 +19,10 @@ const (
 	returnItemQuery = `UPDATE checkout_items SET return_date = CURRENT_TIMESTAMP WHERE checkout_id = $1 AND item_id = $2 AND return_date IS NULL;`
 
 	getItemStatusQuery = `
-	SELECT returned FROM checkout_items ci
-	JOIN checkouts c ON c.id = ci.checkout_id
-	WHERE item_id = $1 ORDER BY c.checkout_date
-	ORDER BY checkout_date DESC NULLS FIRST LIMIT 1
+	SELECT EXISTS (
+	    SELECT 1 FROM checkout_items ci
+	    WHERE ci.item_id = $1 AND ci.return_date IS NULL
+	)
 	`
 )
 
@@ -173,6 +173,10 @@ func (d *DB) Checkout(ctx context.Context, id int) (*domain.Checkout, error) {
 	_, err := builder.Sort("c.checkout_date", Asc)
 	if err != nil {
 		return nil, domain.ErrInvalidSortField
+	}
+
+	if _, err = builder.Filter("c.id", OpEqual, id); err != nil {
+		return nil, err
 	}
 
 	query, params := builder.Build()
