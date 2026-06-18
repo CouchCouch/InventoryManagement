@@ -367,3 +367,100 @@ func TestQueryBuilderSQLInjectionPrevention(t *testing.T) {
 		t.Errorf("Parameter not properly preserved: %v", params)
 	}
 }
+
+func TestOrFilterAfterFilter(t *testing.T) {
+	qb := NewQueryBuilder("items", "id, name")
+	qb.Filter("deleted", OpEqual, false)
+	qb.OrFilter("type_id", OpEqual, 5)
+
+	query, params := qb.Build()
+
+	if !strings.Contains(query, "deleted = $1 AND (type_id = $2)") {
+		t.Errorf("Expected AND with OR sub-group, got: %s", query)
+	}
+	if len(params) != 2 {
+		t.Errorf("Expected 2 parameters, got %d", len(params))
+	}
+}
+
+func TestOrFilterMultiple(t *testing.T) {
+	qb := NewQueryBuilder("items", "id, name")
+	qb.Filter("deleted", OpEqual, false)
+	qb.OrFilter("type_id", OpEqual, 5)
+	qb.OrFilter("type_id", OpEqual, 6)
+
+	query, params := qb.Build()
+
+	if !strings.Contains(query, "deleted = $1 AND (type_id = $2 OR type_id = $3)") {
+		t.Errorf("Expected multi-condition OR sub-group, got: %s", query)
+	}
+	if len(params) != 3 {
+		t.Errorf("Expected 3 parameters, got %d", len(params))
+	}
+}
+
+func TestFilterClosesOrGroup(t *testing.T) {
+	qb := NewQueryBuilder("items", "id, name")
+	qb.OrFilter("type_id", OpEqual, 5)
+	qb.Filter("deleted", OpEqual, false)
+
+	query, params := qb.Build()
+
+	// Filter conditions appear before sub-groups; AND is commutative so the order is cosmetic.
+	if !strings.Contains(query, "deleted = $1 AND (type_id = $2)") {
+		t.Errorf("Expected AND with OR sub-group, got: %s", query)
+	}
+	if len(params) != 2 {
+		t.Errorf("Expected 2 parameters, got %d", len(params))
+	}
+}
+
+func TestInterleavedFilterOrFilter(t *testing.T) {
+	qb := NewQueryBuilder("items", "id, name")
+	qb.Filter("a", OpEqual, 1)
+	qb.OrFilter("b", OpEqual, 2)
+	qb.OrFilter("c", OpEqual, 3)
+	qb.Filter("d", OpEqual, 4)
+
+	query, params := qb.Build()
+
+	// Filter conditions appear before sub-groups; AND is commutative so ordering is cosmetic.
+	if !strings.Contains(query, "a = $1 AND d = $2 AND (b = $3 OR c = $4)") {
+		t.Errorf("Expected interleaved AND/OR, got: %s", query)
+	}
+	if len(params) != 4 {
+		t.Errorf("Expected 4 parameters, got %d", len(params))
+	}
+}
+
+func TestOrFilterOnly(t *testing.T) {
+	qb := NewQueryBuilder("items", "id, name")
+	qb.OrFilter("a", OpEqual, 1)
+	qb.OrFilter("b", OpEqual, 2)
+
+	query, params := qb.Build()
+
+	if !strings.Contains(query, "(a = $1 OR b = $2)") {
+		t.Errorf("Expected OR-only sub-group, got: %s", query)
+	}
+	if len(params) != 2 {
+		t.Errorf("Expected 2 parameters, got %d", len(params))
+	}
+}
+
+func TestSafeQueryBuilderOrFilter(t *testing.T) {
+	sqb := NewSafeQueryBuilder(ItemsRegistry, "i.id, i.name")
+	_, err := sqb.Filter("i.name", OpLike, "%test%")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	_, err = sqb.OrFilter("i.id", OpEqual, "123")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	query, _ := sqb.Build()
+	if !strings.Contains(query, "i.name LIKE $1 AND (i.id = $2)") {
+		t.Errorf("Expected SafeQueryBuilder OR sub-group, got: %s", query)
+	}
+}

@@ -51,7 +51,6 @@ type FilterGroup struct {
 	Conditions []FilterCondition
 	Groups     []FilterGroup
 	LogicOp    LogicOperator
-	IsAnd      bool // true for AND, false for OR
 }
 
 // SortField represents a sort specification
@@ -67,6 +66,7 @@ type QueryBuilder struct {
 	joinClauses []string
 	baseWhere   string
 	filterGroup *FilterGroup
+	orGroup     *FilterGroup // pending OR sub-group, nil when not in an OR block
 	sortFields  []SortField
 	limit       int
 	offset      int
@@ -82,7 +82,7 @@ func NewQueryBuilder(tableName string, selectCols string) *QueryBuilder {
 		filterGroup: &FilterGroup{
 			Conditions: []FilterCondition{},
 			Groups:     []FilterGroup{},
-			IsAnd:      true,
+			LogicOp:    OpAnd,
 		},
 		sortFields: []SortField{},
 		limit:      -1,
@@ -92,8 +92,10 @@ func NewQueryBuilder(tableName string, selectCols string) *QueryBuilder {
 	}
 }
 
-// Filter adds a filter condition to the query (AND logic by default at top level)
+// Filter adds a filter condition to the root AND group.
+// If an OR sub-group is pending (from a prior OrFilter call), it is sealed first.
 func (qb *QueryBuilder) Filter(field string, op FilterOperator, value any) *QueryBuilder {
+	qb.flushOrGroup()
 	qb.filterGroup.Conditions = append(qb.filterGroup.Conditions, FilterCondition{
 		Field:    field,
 		Operator: op,
@@ -102,31 +104,32 @@ func (qb *QueryBuilder) Filter(field string, op FilterOperator, value any) *Quer
 	return qb
 }
 
-// OrFilter adds a filter condition with OR logic
+// OrFilter adds a filter condition to an OR sub-group within the root AND group.
+// Subsequent OrFilter calls extend the same sub-group.
+// The next Filter call seals the sub-group and adds to the root AND group.
 func (qb *QueryBuilder) OrFilter(field string, op FilterOperator, value any) *QueryBuilder {
-	// If this is the first filter with OR logic, convert to OR group
-	if len(qb.filterGroup.Conditions) > 0 && qb.filterGroup.IsAnd {
-		// Move existing conditions to a sub-group
-		mainGroup := FilterGroup{
-			Conditions: qb.filterGroup.Conditions,
-			Groups:     qb.filterGroup.Groups,
-			IsAnd:      true,
-		}
-		qb.filterGroup = &FilterGroup{
+	if qb.orGroup == nil {
+		qb.orGroup = &FilterGroup{
 			Conditions: []FilterCondition{},
-			Groups:     []FilterGroup{mainGroup},
-			IsAnd:      false,
+			Groups:     []FilterGroup{},
+			LogicOp:    OpOr,
 		}
-	} else if len(qb.filterGroup.Conditions) == 0 && len(qb.filterGroup.Groups) == 0 {
-		qb.filterGroup.IsAnd = false
 	}
-
-	qb.filterGroup.Conditions = append(qb.filterGroup.Conditions, FilterCondition{
+	qb.orGroup.Conditions = append(qb.orGroup.Conditions, FilterCondition{
 		Field:    field,
 		Operator: op,
 		Value:    value,
 	})
 	return qb
+}
+
+// flushOrGroup appends any pending OR sub-group to the root filter group.
+// Safe to call multiple times; subsequent calls are no-ops.
+func (qb *QueryBuilder) flushOrGroup() {
+	if qb.orGroup != nil {
+		qb.filterGroup.Groups = append(qb.filterGroup.Groups, *qb.orGroup)
+		qb.orGroup = nil
+	}
 }
 
 // Sort adds a sort field to the query
@@ -164,6 +167,7 @@ func (qb *QueryBuilder) SetBaseWhere(where string) *QueryBuilder {
 
 // Build constructs the final SQL query and returns the query string and parameters
 func (qb *QueryBuilder) Build() (string, []any) {
+	qb.flushOrGroup()
 	qb.params = []any{}
 	qb.paramCount = 0
 
@@ -246,9 +250,9 @@ func (qb *QueryBuilder) buildFilterGroup(group *FilterGroup) string {
 		return ""
 	}
 
-	logicOp := "AND"
-	if !group.IsAnd {
-		logicOp = "OR"
+	logicOp := string(group.LogicOp)
+	if logicOp == "" {
+		logicOp = "AND"
 	}
 
 	return strings.Join(parts, fmt.Sprintf(" %s ", logicOp))
